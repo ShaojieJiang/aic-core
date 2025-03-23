@@ -195,6 +195,8 @@ def test_list_files_not_a_directory():
         hub = AgentHub("test-repo")
         files = hub.list_files("not_a_dir")
 
+        assert files == []
+
 
 @pytest.mark.parametrize("subdir", ["tools", "agents", "pydantic_models"])
 def test_delete_file_valid_subdirs(subdir):
