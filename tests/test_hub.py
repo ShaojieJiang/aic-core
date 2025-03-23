@@ -195,4 +195,36 @@ def test_list_files_not_a_directory():
         hub = AgentHub("test-repo")
         files = hub.list_files("not_a_dir")
 
-        assert files == []
+
+@pytest.mark.parametrize("subdir", ["tools", "agents", "pydantic_models"])
+def test_delete_file_valid_subdirs(subdir):
+    # Arrange
+    repo_id = "test-repo"
+    hub = AgentHub(repo_id)
+    filename = "test_file"
+
+    # Act
+    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+        hub.delete_file(filename, subdir)
+
+    # Assert
+    mock_delete.assert_called_once_with(
+        path_in_repo=f"{subdir}/{filename}", repo_id=repo_id, repo_type="space"
+    )
+
+
+def test_delete_file_invalid_subdir():
+    # Arrange
+    repo_id = "test-repo"
+    hub = AgentHub(repo_id)
+    filename = "test_file"
+    invalid_subdir = "invalid_dir"
+
+    # Act & Assert
+    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+        hub.delete_file(filename, invalid_subdir)
+        mock_delete.assert_called_once_with(
+            path_in_repo=f"{invalid_subdir}/{filename}",
+            repo_id=repo_id,
+            repo_type="space",
+        )
