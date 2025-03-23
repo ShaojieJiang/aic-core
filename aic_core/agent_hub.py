@@ -5,6 +5,7 @@ import json
 import os
 from collections.abc import Callable
 from types import ModuleType
+from huggingface_hub import delete_file
 from huggingface_hub import hf_hub_download
 from huggingface_hub import snapshot_download
 from huggingface_hub import upload_file
@@ -28,8 +29,27 @@ class AgentHub:
         """Initialize the Hugging Face Hub."""
         self.repo_id = repo_id
 
+    def _load_module(self, module_name: str, path: str) -> ModuleType:
+        """Load a module from a path."""
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        if spec is None or spec.loader is None:  # pragma: no cover
+            raise ImportError(f"Could not load spec for module {path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def _check_extension(self, filename: str, extension: str) -> str:
+        """Check if the filename has the correct extension."""
+        if not filename.endswith(extension):  # pragma: no cover
+            filename = f"{filename}{extension}"
+        return filename
+
     def download_files(self) -> None:
-        """Download all files from the Hugging Face Hub."""
+        """Download all files from the Hugging Face Hub.
+
+        This should be called at the service start up, as well as when any
+        changes are made to the repo.
+        """
         snapshot_download(
             repo_id=self.repo_id,
             repo_type=self.repo_type,
@@ -60,20 +80,13 @@ class AgentHub:
         )
         return file_path
 
-    def _load_module(self, module_name: str, path: str) -> ModuleType:
-        """Load a module from a path."""
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        if spec is None or spec.loader is None:  # pragma: no cover
-            raise ImportError(f"Could not load spec for module {path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    def _check_extension(self, filename: str, extension: str) -> str:
-        """Check if the filename has the correct extension."""
-        if not filename.endswith(extension):  # pragma: no cover
-            filename = f"{filename}{extension}"
-        return filename
+    def delete_file(self, filename: str, subdir: str) -> None:
+        """Delete a file from the Hugging Face Hub."""
+        delete_file(
+            path_in_repo=f"{subdir}/{filename}",
+            repo_id=self.repo_id,
+            repo_type=self.repo_type,
+        )
 
     def load_config(self, filename: str) -> dict:
         """Load a config from the Hugging Face Hub."""
