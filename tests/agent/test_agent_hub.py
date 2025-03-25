@@ -4,7 +4,7 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 import pytest
 from pydantic import BaseModel
-from aic_core.agent_hub import AgentHub
+from aic_core.agent.agent_hub import AgentHub
 
 
 # Test fixtures and helper classes
@@ -28,14 +28,14 @@ def test_init():
     assert repo.repo_id == "test-repo"
 
 
-@patch("aic_core.agent_hub.snapshot_download")
+@patch("aic_core.agent.agent_hub.snapshot_download")
 def test_load_files(mock_snapshot):
     repo = AgentHub("test-repo")
     repo.download_files()
     mock_snapshot.assert_called_once_with(repo_id="test-repo", repo_type="space")
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
 def test_load_config(mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "config.json"
@@ -45,8 +45,8 @@ def test_load_config(mock_download):
         assert result == {"key": "value"}
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
-@patch("aic_core.agent_hub.importlib.util")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.importlib.util")
 def test_load_tool(mock_importlib, mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "/path/to/tool.py"
@@ -64,8 +64,8 @@ def test_load_tool(mock_importlib, mock_download):
     assert isinstance(result, Callable)
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
-@patch("aic_core.agent_hub.importlib.util")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.importlib.util")
 def test_load_structured_output(mock_importlib, mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "/path/to/model.py"
@@ -100,7 +100,7 @@ def test_upload_content():
     ]
 
     for filename, content, subdir, extension in test_cases:
-        with patch("aic_core.agent_hub.upload_file") as mock_upload:
+        with patch("aic_core.agent.agent_hub.upload_file") as mock_upload:
             # Call the method
             repo.upload_content(filename, content, subdir)
 
@@ -125,7 +125,7 @@ def test_upload_content_with_extension():
     repo = AgentHub("test-repo")
 
     with (
-        patch("aic_core.agent_hub.upload_file") as mock_upload,
+        patch("aic_core.agent.agent_hub.upload_file") as mock_upload,
     ):
         # Call with filename that already has extension
         repo.upload_content("test_tool.py", "content", "tools")
@@ -143,7 +143,7 @@ def test_upload_content_with_extension():
 def test_list_files_existing_directory():
     """Test listing files in an existing directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
         patch("os.path.isdir") as mock_isdir,
         patch("os.listdir") as mock_listdir,
@@ -169,7 +169,7 @@ def test_list_files_existing_directory():
 def test_list_files_nonexistent_directory():
     """Test listing files in a non-existent directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
     ):
         mock_snapshot.return_value = "/fake/repo/path"
@@ -184,7 +184,7 @@ def test_list_files_nonexistent_directory():
 def test_list_files_not_a_directory():
     """Test listing files when path exists but is not a directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
         patch("os.path.isdir") as mock_isdir,
     ):
@@ -206,7 +206,7 @@ def test_delete_file_valid_subdirs(subdir):
     filename = "test_file"
 
     # Act
-    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+    with patch("aic_core.agent.agent_hub.delete_file") as mock_delete:
         hub.delete_file(filename, subdir)
 
     # Assert
@@ -223,7 +223,7 @@ def test_delete_file_invalid_subdir():
     invalid_subdir = "invalid_dir"
 
     # Act & Assert
-    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+    with patch("aic_core.agent.agent_hub.delete_file") as mock_delete:
         hub.delete_file(filename, invalid_subdir)
         mock_delete.assert_called_once_with(
             path_in_repo=f"{invalid_subdir}/{filename}",

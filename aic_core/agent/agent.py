@@ -12,7 +12,7 @@ from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from smolagents import load_tool
-from aic_core.agent_hub import AgentHub
+from aic_core.agent.agent_hub import AgentHub
 
 
 class AgentConfig(BaseModel):

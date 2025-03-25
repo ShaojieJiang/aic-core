@@ -5,9 +5,9 @@ import pytest
 from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic_ai import Agent
 from pydantic_ai import Tool
-from aic_core.agent import AgentConfig
-from aic_core.agent import AgentFactory
-from aic_core.agent import MCPServerStdio
+from aic_core.agent.agent import AgentConfig
+from aic_core.agent.agent import AgentFactory
+from aic_core.agent.agent import MCPServerStdio
 
 
 def test_agent_config_initialization():
@@ -28,7 +28,7 @@ def test_agent_config_initialization():
     assert config.mcp_servers == []
 
 
-@patch("aic_core.agent.AgentHub")
+@patch("aic_core.agent.agent.AgentHub")
 def test_from_hub(mock_agent_hub):
     """Test loading config from Hugging Face Hub."""
     # Create a Mock instance for the repo
@@ -40,6 +40,7 @@ def test_from_hub(mock_agent_hub):
         "model": "openai:gpt-4o",
         "name": "TestAgent",
         "system_prompt": "Test prompt",
+        "repo_id": "test-repo",
     }
 
     config = AgentConfig.from_hub("test-repo", "agent")
@@ -50,7 +51,7 @@ def test_from_hub(mock_agent_hub):
     mock_repo.load_config.assert_called_with("agent")
 
 
-@patch("aic_core.agent.AgentHub")
+@patch("aic_core.agent.agent.AgentHub")
 def test_push_to_hub(mock_agent_hub):
     """Test pushing config to Hugging Face Hub."""
     mock_repo = Mock()
@@ -86,7 +87,7 @@ def test_init(basic_config):
     assert factory.config == basic_config
 
 
-@patch("aic_core.agent.load_tool")
+@patch("aic_core.agent.agent.load_tool")
 def test_hf_to_pai_tools_local(mock_load_tool):
     # Setup mock tool
     def forward():
@@ -109,7 +110,7 @@ def test_hf_to_pai_tools_local(mock_load_tool):
     )
 
 
-@patch("aic_core.agent.load_tool")
+@patch("aic_core.agent.agent.load_tool")
 def test_hf_to_pai_tools_remote(mock_load_tool):
     # First call raises LocalEntryNotFoundError, second call succeeds
     def forward():
@@ -141,7 +142,7 @@ def test_get_result_type_single(agent_factory):
     assert agent_factory.get_result_type() == str  # noqa: E721
 
 
-@patch("aic_core.agent.AgentHub")
+@patch("aic_core.agent.agent.AgentHub")
 def test_get_result_type_structured_output(mock_agent_hub, agent_factory):
     # Setup mock for AgentHub
     mock_repo = Mock()
@@ -160,7 +161,7 @@ def test_get_result_type_structured_output(mock_agent_hub, agent_factory):
     assert result == Union.__getitem__((str, mock_custom_type))
 
 
-@patch("aic_core.agent.AgentHub")
+@patch("aic_core.agent.agent.AgentHub")
 def test_get_tools(mock_agent_hub, agent_factory):
     # Setup mocks
     def example_tool():
@@ -186,7 +187,7 @@ def test_get_mcp_servers(agent_factory):
     assert servers[1] == MCPServerStdio("command2", [])
 
 
-@patch("aic_core.agent.OpenAIProvider")
+@patch("aic_core.agent.agent.OpenAIProvider")
 def test_create_agent(mock_provider, agent_factory):
     # Setup mocks
     mock_provider_instance = Mock()
