@@ -1,6 +1,7 @@
 """Tool config page."""
 
 import importlib.util
+import os
 import sys
 from types import ModuleType
 import streamlit as st
@@ -54,7 +55,8 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
             with open(file_path) as f:
                 default_code = f.read()
         else:
-            with open("./tool_template.py") as f:
+            template_path = os.path.join(os.path.dirname(__file__), "tool_template.py")
+            with open(template_path) as f:
                 default_code = f.read()
 
         code = code_editor(
