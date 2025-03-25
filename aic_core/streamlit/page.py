@@ -26,4 +26,4 @@ class AICPage(ABC):
     @abstractmethod
     def run(self) -> None:
         """Run the page."""
-        pass
+        pass  # pragma: no cover
