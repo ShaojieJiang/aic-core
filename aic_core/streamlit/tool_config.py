@@ -46,15 +46,15 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
 
         return module
 
-    def edit_function(self, function_name: str) -> None:
-        """Edit function."""
+    def edit_tool(self, tool_name: str) -> None:
+        """Edit tool."""
         hf_repo = AgentHub(self.repo_id)
-        if function_name:
-            file_path = hf_repo.get_file_path(function_name, AgentHub.tools_dir)
+        if tool_name:
+            file_path = hf_repo.get_file_path(tool_name, AgentHub.tools_dir)
             with open(file_path) as f:
                 default_code = f.read()
         else:
-            with open("extendable_agents/app/extension_template.py") as f:
+            with open("extendable_agents/app/tool_template.py") as f:
                 default_code = f.read()
 
         code = code_editor(
@@ -66,13 +66,13 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
                 "Not saved. "
                 "Press `Control + Enter` (Windows) or `Command + Enter` (Mac) to save."
             )
-        function_name = st.text_input(
-            "Function or Pydantic model name",
-            value=function_name,
+        tool_name = st.text_input(
+            "Tool name",
+            value=tool_name,
             disabled=not code["text"],
         )
 
-        button_disabled = not function_name or not code["text"]
+        button_disabled = not tool_name or not code["text"]
         if st.button("Save", disabled=button_disabled):
             # Test loading the code as a module
             if code["text"]:
@@ -83,20 +83,20 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
                         for item in dir(dynamic_module)
                         if not item.startswith("__")
                     ]
-                    assert function_name in module_contents
-                    func = getattr(dynamic_module, function_name)
+                    assert tool_name in module_contents
+                    func = getattr(dynamic_module, tool_name)
                     # Upload the code to Tools Hub
                     if isinstance(func, type) and issubclass(func, BaseModel):
                         hf_repo.upload_content(
-                            function_name, code["text"], AgentHub.pydantic_models_dir
+                            tool_name, code["text"], AgentHub.pydantic_models_dir
                         )
                     else:
                         hf_repo.upload_content(
-                            function_name, code["text"], AgentHub.tools_dir
+                            tool_name, code["text"], AgentHub.tools_dir
                         )
-                    st.success(f"Function `{function_name}` saved successfully!")
+                    st.success(f"Tool `{tool_name}` saved successfully!")
                 except AssertionError:
-                    st.error(f"Definition `{function_name}` not found in module")
+                    st.error(f"Definition `{tool_name}` not found in module")
                 except Exception as e:
                     st.error(f"Error loading code as module: {str(e)}")
             else:
@@ -107,4 +107,4 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
         st.title("Custom Function or Pydantic Model")
         tools = self.tool_selector(self.repo_id)
         selected_tool = tools[0] if tools else ""
-        self.edit_function(selected_tool)
+        self.edit_tool(selected_tool)
