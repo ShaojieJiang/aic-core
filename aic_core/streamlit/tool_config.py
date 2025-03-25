@@ -54,7 +54,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
             with open(file_path) as f:
                 default_code = f.read()
         else:
-            with open("extendable_agents/app/tool_template.py") as f:
+            with open("./tool_template.py") as f:
                 default_code = f.read()
 
         code = code_editor(
