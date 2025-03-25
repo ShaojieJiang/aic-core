@@ -57,7 +57,7 @@ class AgentConfig(BaseModel):
         """Load an agent config from Hugging Face Hub."""
         repo = AgentHub(repo_id)
         config_obj = repo.load_config(agent_name)
-        return cls(**config_obj, repo_id=repo_id)
+        return cls(**config_obj)
 
     def push_to_hub(self) -> None:
         """Upload a JSON file to Hugging Face Hub."""
