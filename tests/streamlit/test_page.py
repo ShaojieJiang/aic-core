@@ -1,25 +1,41 @@
 import pytest
 from streamlit import session_state
 from aic_core.streamlit.page import AICPage
-from aic_core.streamlit.page import PageStateSingleton
+from aic_core.streamlit.page import app_state
 
 
-def test_page_state_singleton_creation():
+def test_app_state_decorator():
     # Clear session state before test
-    if "test_file.py" in session_state:
-        del session_state["test_file.py"]
+    session_state.clear()
 
-    # Create first instance
-    state1 = PageStateSingleton("test_file.py")
-    assert state1.file_path == "test_file.py"
+    # Create a test class to decorate
+    @app_state("test_path")
+    class TestClass:
+        def __init__(self, value=None):
+            self.value = value
 
-    # Create second instance with same file_path
-    state2 = PageStateSingleton("test_file.py")
-    assert state1 is state2  # Should be the same instance
+    # First instance creation
+    instance1 = TestClass(value="test")
+    assert instance1.value == "test"
+    assert "test_path" in session_state
+    assert session_state["test_path"] is instance1
 
-    # Create instance with different file_path
-    state3 = PageStateSingleton("other_file.py")
-    assert state1 is not state3  # Should be different instances
+    # Second call should return the same instance
+    instance2 = TestClass(value="different")
+    assert instance2 is instance1
+    assert instance2.value == "test"  # Should keep original value
+
+    # Test with different path
+    @app_state("other_path")
+    class OtherClass:
+        def __init__(self, value=None):
+            self.value = value
+
+    # Should create new instance for different path
+    other_instance = OtherClass(value="other")
+    assert "other_path" in session_state
+    assert other_instance is not instance1
+    assert other_instance.value == "other"
 
 
 class TestAICPage(AICPage):
