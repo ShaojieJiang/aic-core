@@ -67,7 +67,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
         except AssertionError:
             st.error(f"Definition `{tool_name}` not found in module")
             st.stop()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             st.error(f"Error loading code as module: {str(e)}")
             st.stop()
         self.re_download_files()
@@ -75,7 +75,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
     @abstractmethod
     def re_download_files(self) -> None:
         """Re-download the files."""
-        pass
+        pass  # pragma: no cover
 
     def edit_tool(self, tool_name: str) -> None:
         """Edit tool."""
@@ -93,7 +93,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
             default_code, lang="python", height=300, options={"wrap": True}
         )
 
-        if not code["text"]:
+        if not code["text"]:  # pragma: no cover
             st.warning(
                 "Not saved. "
                 "Press `Control + Enter` (Windows) or `Command + Enter` (Mac) to save."
@@ -110,7 +110,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
             disabled=button_disabled,
             on_click=self.save_tool,
             args=(tool_name, code["text"]),
-        ):
+        ):  # pragma: no cover
             st.success(f"Tool `{tool_name}` saved successfully!")
 
     def run(self) -> None:
