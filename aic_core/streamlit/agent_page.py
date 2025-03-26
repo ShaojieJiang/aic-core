@@ -25,7 +25,7 @@ class PageState:
 class AgentPage(AICPage, AgentSelectorMixin):
     """Chatbot page."""
 
-    def __init__(self, repo_id: str, page_title: str) -> None:
+    def __init__(self, repo_id: str, page_title: str = "Agent") -> None:
         """Initialize the page."""
         super().__init__()
         self.app_state = PageState()
