@@ -1,5 +1,6 @@
 """Agent config page."""
 
+from abc import abstractmethod
 from typing import get_args
 import streamlit as st
 from pydantic_ai.models import KnownModelName
@@ -110,7 +111,12 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     def save_config(self, config: AgentConfig) -> None:
         """Save the config and trigger a re-download of the files."""
         config.push_to_hub()
-        # Add code to trigger a re-download of the files
+        self.re_download_files()
+
+    @abstractmethod
+    def re_download_files(self) -> None:
+        """Re-download the files."""
+        pass
 
     def run(self) -> None:
         """Main function."""
