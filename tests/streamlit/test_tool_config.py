@@ -34,7 +34,8 @@ class TestClass:
         ("test_tool", "def test_tool(): pass", False),
         (
             "TestModel",
-            "from pydantic import BaseModel\nclass TestModel(BaseModel):\n    field: str",
+            "from pydantic import BaseModel\nclass TestModel(BaseModel):\n    "
+            "field: str",
             True,
         ),
     ],
