@@ -110,7 +110,7 @@ class AgentFactory:
                 type_objects.append(eval(type_str))
             except NameError:  # Structured output
                 hf_repo = AgentHub(self.config.repo_id)
-                type_objects.append(hf_repo.load_structured_output(type_str))
+                type_objects.append(hf_repo.load_result_type(type_str))
 
         # Create a new type using Union
         return Union.__getitem__(tuple(type_objects))

@@ -22,7 +22,7 @@ class AgentHub:
 
     tools_dir: str = "tools"
     agents_dir: str = "agents"
-    pydantic_models_dir: str = "pydantic_models"
+    result_types_dir: str = "result_types"
     repo_type: str = "space"
 
     def __init__(self, repo_id: str) -> None:
@@ -61,9 +61,9 @@ class AgentHub:
             case self.tools_dir:
                 extension = ".py"
                 subfolder = self.tools_dir
-            case self.pydantic_models_dir:
+            case self.result_types_dir:
                 extension = ".py"
-                subfolder = self.pydantic_models_dir
+                subfolder = self.result_types_dir
             case self.agents_dir:
                 extension = ".json"
                 subfolder = self.agents_dir
@@ -109,12 +109,12 @@ class AgentHub:
 
         return func
 
-    def load_structured_output(self, filename: str) -> type[BaseModel] | None:
-        """Load a structured output from the Hugging Face Hub."""
+    def load_result_type(self, filename: str) -> type[BaseModel] | None:
+        """Load a result type from the Hugging Face Hub."""
         if not filename:  # pragma: no cover
             return None
         name_without_extension = filename.split(".")[0]
-        file_path = self.get_file_path(filename, self.pydantic_models_dir)
+        file_path = self.get_file_path(filename, self.result_types_dir)
         module = self._load_module(name_without_extension, file_path)
         model = getattr(module, name_without_extension)
         assert isinstance(model, type) and issubclass(model, BaseModel)
@@ -131,7 +131,7 @@ class AgentHub:
         match subdir:
             case self.tools_dir:
                 extension = ".py"
-            case self.pydantic_models_dir:
+            case self.result_types_dir:
                 extension = ".py"
             case self.agents_dir:
                 extension = ".json"

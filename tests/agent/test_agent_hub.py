@@ -79,7 +79,7 @@ def test_load_structured_output(mock_importlib, mock_download):
     mock_importlib.spec_from_file_location.return_value = mock_spec
     mock_importlib.module_from_spec.return_value = mock_module
 
-    result = repo.load_structured_output("model")
+    result = repo.load_result_type("model")
     assert issubclass(result, BaseModel)
 
 

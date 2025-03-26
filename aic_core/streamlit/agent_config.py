@@ -5,7 +5,6 @@ from typing import get_args
 import streamlit as st
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.mixins import ToolSelectorMixin
 from aic_core.streamlit.page import AICPage
@@ -22,8 +21,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     def list_result_type_options(self) -> list[str]:
         """List all result types."""
         primitive_types = ["str", "int", "float", "bool"]
-        hf_repo = AgentHub(self.repo_id)
-        return primitive_types + hf_repo.list_files(AgentHub.pydantic_models_dir)
+        return primitive_types + self.list_result_type_names(self.repo_id)
 
     def configure(self, config: AgentConfig) -> AgentConfig:
         """Widgets to configure the agent."""
@@ -75,7 +73,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         result_retries = st.number_input(
             "Result retries", min_value=0, max_value=100, value=config.retries
         )
-        list_known_tools = self.list_tool_names(self.repo_id)
+        list_known_tools = self.list_function_names(self.repo_id)
         default_known_tools = [
             tool for tool in config.known_tools if tool in list_known_tools
         ]

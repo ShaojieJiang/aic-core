@@ -90,7 +90,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
                     # Upload the code to Tools Hub
                     if isinstance(func, type) and issubclass(func, BaseModel):
                         hf_repo.upload_content(
-                            tool_name, code["text"], AgentHub.pydantic_models_dir
+                            tool_name, code["text"], AgentHub.result_types_dir
                         )
                     else:
                         hf_repo.upload_content(
@@ -107,6 +107,5 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
     def run(self) -> None:
         """Main function."""
         st.title("Custom Function or Pydantic Model")
-        tools = self.tool_selector(self.repo_id)
-        selected_tool = tools[0] if tools else ""
+        selected_tool = self.tool_selector(self.repo_id)
         self.edit_tool(selected_tool)
