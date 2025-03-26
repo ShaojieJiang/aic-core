@@ -136,7 +136,7 @@ class AgentFactory:
             servers.append(MCPServerStdio(command, args))
         return servers
 
-    def create_agent(self, api_key: str) -> Agent:
+    def create_agent(self, api_key: str | None = None) -> Agent:
         """Create an agent from a config."""
         result_type = self.get_result_type()
         model_name = self.config.model.split(":")[1]
