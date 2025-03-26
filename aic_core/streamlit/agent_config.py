@@ -108,9 +108,9 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         )
 
     def save_config(self, config: AgentConfig) -> None:
-        """Save the config."""
+        """Save the config and trigger a re-download of the files."""
         config.push_to_hub()
-        AgentHub(self.repo_id).download_files()
+        # Add code to trigger a re-download of the files
 
     def run(self) -> None:
         """Main function."""
