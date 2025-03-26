@@ -68,7 +68,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
                     result.append((self.assistant_role, part.content))
                 case UserPromptPart():
                     result.append((self.user_role, part.content))  # type: ignore
-                case _:
+                case _:  # pragma: no cover
                     pass
 
         return result
@@ -90,6 +90,6 @@ class AgentPage(AICPage, AgentSelectorMixin):
         st.sidebar.button("Reset chat history", on_click=self.reset_chat_history)
         user_input = st.chat_input("Enter a message")
 
-        if user_input:
+        if user_input:  # pragma: no cover
             asyncio.run(self.get_response(user_input, agent))
             st.rerun()
