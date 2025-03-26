@@ -1,15 +1,21 @@
 import asyncio
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+from unittest.mock import patch
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelRequest, TextPart, UserPromptPart
+from pydantic_ai.messages import ModelRequest
+from pydantic_ai.messages import TextPart
+from pydantic_ai.messages import UserPromptPart
+from aic_core.agent.agent import AgentConfig
+from aic_core.agent.agent import AgentFactory
+from aic_core.streamlit.agent_page import AgentPage
 
-from aic_core.streamlit.agent_page import AgentPage, PageState
-from aic_core.agent.agent import AgentConfig, AgentFactory
 
 @pytest.fixture
 def agent_page():
     return AgentPage(repo_id="test-repo")
+
 
 @pytest.fixture
 def mock_agent():
@@ -17,36 +23,44 @@ def mock_agent():
     agent._mcp_servers = []
     return agent
 
+
 def test_init(agent_page):
     assert agent_page.repo_id == "test-repo"
     assert agent_page.page_title == "Agent"
     assert agent_page.user_role == "user"
     assert agent_page.assistant_role == "assistant"
 
+
 def test_reset_chat_history(agent_page):
     agent_page.app_state.chat_history = ["some", "messages"]
     agent_page.reset_chat_history()
     assert agent_page.app_state.chat_history == []
+
 
 def test_get_agent():
     # Setup
     agent_page = AgentPage(repo_id="test-repo")
     mock_agent = MagicMock(spec=Agent)
     mock_config = MagicMock(spec=AgentConfig)
-    
+
     # Mock the from_hub method of AgentConfig
-    with patch.object(AgentConfig, 'from_hub', return_value=mock_config) as mock_from_hub:
+    with patch.object(
+        AgentConfig, "from_hub", return_value=mock_config
+    ) as mock_from_hub:
         # Mock the AgentFactory
-        with patch.object(AgentFactory, 'create_agent', return_value=mock_agent) as mock_create_agent:
+        with patch.object(
+            AgentFactory, "create_agent", return_value=mock_agent
+        ) as mock_create_agent:
             # Call the method
             result = agent_page.get_agent("test-agent")
-            
+
             # Verify the calls
             mock_from_hub.assert_called_once_with("test-repo", "test-agent")
             mock_create_agent.assert_called_once()
-            
+
             # Verify the result
-            assert result == mock_agent 
+            assert result == mock_agent
+
 
 def test_get_response_without_mcp_servers(agent_page, mock_agent):
     user_input = "Hello"
@@ -56,9 +70,10 @@ def test_get_response_without_mcp_servers(agent_page, mock_agent):
 
     with patch("streamlit.chat_message") as mock_chat_message:
         asyncio.run(agent_page.get_response(user_input, mock_agent))
-        
+
         mock_chat_message.assert_called_once()
         assert agent_page.app_state.chat_history == ["message1", "message2"]
+
 
 def test_get_response_with_mcp_servers(agent_page, mock_agent):
     mock_agent._mcp_servers = ["server1"]
@@ -73,9 +88,10 @@ def test_get_response_with_mcp_servers(agent_page, mock_agent):
 
     with patch("streamlit.chat_message") as mock_chat_message:
         asyncio.run(agent_page.get_response(user_input, mock_agent))
-        
+
         mock_chat_message.assert_called_once()
         assert agent_page.app_state.chat_history == ["message1"]
+
 
 def test_to_simple_messages(agent_page):
     # Test with TextPart
@@ -93,16 +109,17 @@ def test_to_simple_messages(agent_page):
     result = agent_page.to_simple_messages(mixed_parts)
     assert result == [("assistant", "Hello"), ("user", "Hi")]
 
+
 def test_display_chat_history(agent_page):
-    message = ModelRequest(parts=[
-        TextPart(content="Hello"),
-        UserPromptPart(content="Hi")
-    ])
+    message = ModelRequest(
+        parts=[TextPart(content="Hello"), UserPromptPart(content="Hi")]
+    )
     agent_page.app_state.chat_history = [message]
 
     with patch("streamlit.chat_message") as mock_chat_message:
         agent_page.display_chat_history()
         assert mock_chat_message.call_count == 2
+
 
 @patch("streamlit.title")
 @patch("streamlit.chat_input")
@@ -111,9 +128,11 @@ def test_run(mock_button, mock_chat_input, mock_title, agent_page):
     mock_chat_input.return_value = None
     agent_page.agent_selector = MagicMock()
     agent_page.get_agent = MagicMock()
-    
+
     agent_page.run()
-    
+
     mock_title.assert_called_once_with("Agent")
-    mock_button.assert_called_once_with("Reset chat history", on_click=agent_page.reset_chat_history)
+    mock_button.assert_called_once_with(
+        "Reset chat history", on_click=agent_page.reset_chat_history
+    )
     mock_chat_input.assert_called_once_with("Enter a message")

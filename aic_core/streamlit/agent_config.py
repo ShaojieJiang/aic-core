@@ -125,5 +125,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         else:  # Initialize a new agent
             config = AgentConfig(model="openai:gpt-4o", repo_id=self.repo_id)
         new_config = self.configure(config)
-        if st.button("Save", on_click=self.save_config, args=(new_config,)):  # pragma: no cover
+        if st.button(
+            "Save", on_click=self.save_config, args=(new_config,)
+        ):  # pragma: no cover
             st.success("Agent pushed to the hub.")

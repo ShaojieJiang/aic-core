@@ -83,7 +83,7 @@ def test_run(agent_config_page, mock_streamlit):
     ):
         mock_config = Mock(spec=AgentConfig)
         mock_from_hub.return_value = mock_config
-        with patch.object(agent_config_page, 'configure', return_value=mock_config):
+        with patch.object(agent_config_page, "configure", return_value=mock_config):
             agent_config_page.run()
 
             mock_streamlit.title.assert_called_once_with("Custom Agent")
@@ -98,7 +98,7 @@ def test_run_new_agent(agent_config_page, mock_streamlit):
         patch.object(agent_config_page, "save_config"),
     ):
         mock_config = Mock(spec=AgentConfig)
-        with patch.object(agent_config_page, 'configure', return_value=mock_config):
+        with patch.object(agent_config_page, "configure", return_value=mock_config):
             agent_config_page.run()
 
             mock_streamlit.title.assert_called_once_with("Custom Agent")
