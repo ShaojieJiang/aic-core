@@ -93,7 +93,7 @@ def test_upload_content():
         (
             "test_model",
             "from pydantic import BaseModel\nclass test_model(BaseModel): pass",
-            "pydantic_models",
+            "result_types",
             ".py",
         ),
         ("test_config", '{"key": "value"}', "agents", ".json"),
@@ -198,7 +198,7 @@ def test_list_files_not_a_directory():
         assert files == []
 
 
-@pytest.mark.parametrize("subdir", ["tools", "agents", "pydantic_models"])
+@pytest.mark.parametrize("subdir", ["tools", "agents", "result_types"])
 def test_delete_file_valid_subdirs(subdir):
     # Arrange
     repo_id = "test-repo"

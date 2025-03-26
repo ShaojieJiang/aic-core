@@ -147,7 +147,7 @@ def test_get_result_type_structured_output(mock_agent_hub, agent_factory):
     # Setup mock for AgentHub
     mock_repo = Mock()
     mock_custom_type = type("CustomType", (), {})  # Creates a dynamic type
-    mock_repo.load_structured_output.return_value = mock_custom_type
+    mock_repo.load_result_type.return_value = mock_custom_type
     mock_agent_hub.return_value = mock_repo
 
     # Test with a mix of built-in and custom types
@@ -155,7 +155,7 @@ def test_get_result_type_structured_output(mock_agent_hub, agent_factory):
     result = agent_factory.get_result_type()
 
     # Verify AgentHub was called for custom type
-    mock_repo.load_structured_output.assert_called_once_with("custom_output_type")
+    mock_repo.load_result_type.assert_called_once_with("custom_output_type")
 
     # Verify the resulting Union type contains both str and our custom type
     assert result == Union.__getitem__((str, mock_custom_type))
