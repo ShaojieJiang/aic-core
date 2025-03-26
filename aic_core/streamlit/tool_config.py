@@ -3,6 +3,7 @@
 import importlib.util
 import os
 import sys
+from abc import abstractmethod
 from types import ModuleType
 import streamlit as st
 from code_editor import code_editor
@@ -47,6 +48,35 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
 
         return module
 
+    def save_tool(self, tool_name: str, code: str) -> None:
+        """Save tool."""
+        hf_repo = AgentHub(self.repo_id)
+        try:
+            # Test loading the code as a module
+            dynamic_module = self.load_code_as_module(code)
+            module_contents = [
+                item for item in dir(dynamic_module) if not item.startswith("__")
+            ]
+            assert tool_name in module_contents
+            func = getattr(dynamic_module, tool_name)
+            # Upload the code to Tools Hub
+            if isinstance(func, type) and issubclass(func, BaseModel):
+                hf_repo.upload_content(tool_name, code, AgentHub.result_types_dir)
+            else:
+                hf_repo.upload_content(tool_name, code, AgentHub.tools_dir)
+        except AssertionError:
+            st.error(f"Definition `{tool_name}` not found in module")
+            st.stop()
+        except Exception as e:
+            st.error(f"Error loading code as module: {str(e)}")
+            st.stop()
+        self.re_download_files()
+
+    @abstractmethod
+    def re_download_files(self) -> None:
+        """Re-download the files."""
+        pass
+
     def edit_tool(self, tool_name: str) -> None:
         """Edit tool."""
         hf_repo = AgentHub(self.repo_id)
@@ -75,34 +105,13 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
         )
 
         button_disabled = not tool_name or not code["text"]
-        if st.button("Save", disabled=button_disabled):
-            # Test loading the code as a module
-            if code["text"]:
-                try:
-                    dynamic_module = self.load_code_as_module(code["text"])
-                    module_contents = [
-                        item
-                        for item in dir(dynamic_module)
-                        if not item.startswith("__")
-                    ]
-                    assert tool_name in module_contents
-                    func = getattr(dynamic_module, tool_name)
-                    # Upload the code to Tools Hub
-                    if isinstance(func, type) and issubclass(func, BaseModel):
-                        hf_repo.upload_content(
-                            tool_name, code["text"], AgentHub.result_types_dir
-                        )
-                    else:
-                        hf_repo.upload_content(
-                            tool_name, code["text"], AgentHub.tools_dir
-                        )
-                    st.success(f"Tool `{tool_name}` saved successfully!")
-                except AssertionError:
-                    st.error(f"Definition `{tool_name}` not found in module")
-                except Exception as e:
-                    st.error(f"Error loading code as module: {str(e)}")
-            else:
-                st.write()
+        if st.button(
+            "Save",
+            disabled=button_disabled,
+            on_click=self.save_tool,
+            args=(tool_name, code["text"]),
+        ):
+            st.success(f"Tool `{tool_name}` saved successfully!")
 
     def run(self) -> None:
         """Main function."""
