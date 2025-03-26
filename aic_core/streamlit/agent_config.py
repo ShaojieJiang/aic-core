@@ -114,7 +114,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     @abstractmethod
     def re_download_files(self) -> None:
         """Re-download the files."""
-        pass
+        pass  # pragma: no cover
 
     def run(self) -> None:
         """Main function."""
@@ -125,5 +125,5 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         else:  # Initialize a new agent
             config = AgentConfig(model="openai:gpt-4o", repo_id=self.repo_id)
         new_config = self.configure(config)
-        if st.button("Save", on_click=self.save_config, args=(new_config,)):
+        if st.button("Save", on_click=self.save_config, args=(new_config,)):  # pragma: no cover
             st.success("Agent pushed to the hub.")
