@@ -32,9 +32,9 @@ def test_init(agent_page):
 
 
 def test_reset_chat_history(agent_page):
-    agent_page.app_state.chat_history = ["some", "messages"]
+    agent_page.page_state.chat_history = ["some", "messages"]
     agent_page.reset_chat_history()
-    assert agent_page.app_state.chat_history == []
+    assert agent_page.page_state.chat_history == []
 
 
 def test_get_agent():
@@ -72,7 +72,7 @@ def test_get_response_without_mcp_servers(agent_page, mock_agent):
         asyncio.run(agent_page.get_response(user_input, mock_agent))
 
         mock_chat_message.assert_called_once()
-        assert agent_page.app_state.chat_history == ["message1", "message2"]
+        assert agent_page.page_state.chat_history == ["message1", "message2"]
 
 
 def test_get_response_with_mcp_servers(agent_page, mock_agent):
@@ -90,7 +90,7 @@ def test_get_response_with_mcp_servers(agent_page, mock_agent):
         asyncio.run(agent_page.get_response(user_input, mock_agent))
 
         mock_chat_message.assert_called_once()
-        assert agent_page.app_state.chat_history == ["message1"]
+        assert agent_page.page_state.chat_history == ["message1"]
 
 
 def test_to_simple_messages(agent_page):
@@ -114,7 +114,7 @@ def test_display_chat_history(agent_page):
     message = ModelRequest(
         parts=[TextPart(content="Hello"), UserPromptPart(content="Hi")]
     )
-    agent_page.app_state.chat_history = [message]
+    agent_page.page_state.chat_history = [message]
 
     with patch("streamlit.chat_message") as mock_chat_message:
         agent_page.display_chat_history()
