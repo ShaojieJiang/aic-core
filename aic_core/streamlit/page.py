@@ -21,6 +21,21 @@ def app_state(file_path: str) -> Callable:
     return decorator
 
 
+def app_state_registry(cls: Callable, file_path: str) -> Any:
+    """Create or return a singleton instance of a class.
+
+    Args:
+        cls: The class to instantiate
+        file_path: Unique identifier for the instance
+
+    Returns:
+        Instance of the class
+    """
+    if file_path not in session_state:
+        session_state[file_path] = cls()
+    return session_state[file_path]
+
+
 class AICPage(ABC):
     """AIC page."""
 

@@ -12,10 +12,9 @@ from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent import AgentFactory
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.page import AICPage
-from aic_core.streamlit.page import app_state
+from aic_core.streamlit.page import app_state_registry
 
 
-@app_state(__file__)
 class PageState:
     """Page state."""
 
@@ -25,10 +24,12 @@ class PageState:
 class AgentPage(AICPage, AgentSelectorMixin):
     """Chatbot page."""
 
-    def __init__(self, repo_id: str, page_title: str = "Agent") -> None:
+    def __init__(
+        self, repo_id: str, caller_path: str, page_title: str = "Agent"
+    ) -> None:
         """Initialize the page."""
         super().__init__()
-        self.page_state = PageState()
+        self.page_state = app_state_registry(PageState, caller_path)
         self.repo_id = repo_id
         self.page_title = page_title
         self.user_role = "user"
