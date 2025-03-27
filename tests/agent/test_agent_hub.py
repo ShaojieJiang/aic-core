@@ -1,3 +1,4 @@
+import time
 from collections.abc import Callable
 from unittest.mock import Mock
 from unittest.mock import mock_open
@@ -40,7 +41,10 @@ def test_load_config(mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "config.json"
 
-    with patch("builtins.open", mock_open(read_data='{"key": "value"}')):
+    with (
+        patch("builtins.open", mock_open(read_data='{"key": "value"}')),
+        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+    ):
         result = repo.load_config("config")
         assert result == {"key": "value"}
 
@@ -60,8 +64,11 @@ def test_load_tool(mock_importlib, mock_download):
     mock_importlib.spec_from_file_location.return_value = mock_spec
     mock_importlib.module_from_spec.return_value = mock_module
 
-    result = repo.load_tool("tool")
-    assert isinstance(result, Callable)
+    with (
+        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+    ):
+        result = repo.load_tool("tool")
+        assert isinstance(result, Callable)
 
 
 @patch("aic_core.agent.agent_hub.hf_hub_download")
@@ -79,8 +86,11 @@ def test_load_structured_output(mock_importlib, mock_download):
     mock_importlib.spec_from_file_location.return_value = mock_spec
     mock_importlib.module_from_spec.return_value = mock_module
 
-    result = repo.load_result_type("model")
-    assert issubclass(result, BaseModel)
+    with (
+        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+    ):
+        result = repo.load_result_type("model")
+        assert issubclass(result, BaseModel)
 
 
 def test_upload_content():
@@ -230,3 +240,44 @@ def test_delete_file_invalid_subdir():
             repo_id=repo_id,
             repo_type="space",
         )
+
+
+def test_layzy_update():
+    """Test the _layzy_update method."""
+    with (
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
+        patch("os.path.getmtime") as mock_getmtime,
+        patch("os.utime") as mock_utime,
+    ):
+        # Setup
+        hub = AgentHub("test-repo")
+        mock_snapshot.return_value = "/fake/cache/path"
+
+        # Test case 1: Cache is fresh (no update needed)
+        mock_getmtime.return_value = time.time()  # Current time
+        hub._layzy_update()
+        # Should only call snapshot_download once with local_files_only=True
+        assert mock_snapshot.call_count == 1
+        mock_snapshot.assert_called_with(
+            hub.repo_id, repo_type=hub.repo_type, local_files_only=True
+        )
+        mock_utime.assert_not_called()
+
+        # Reset mocks
+        mock_snapshot.reset_mock()
+        mock_utime.reset_mock()
+
+        # Test case 2: Cache is stale (update needed)
+        mock_getmtime.return_value = time.time() - (
+            hub.update_interval + 100
+        )  # Old timestamp
+        hub._layzy_update()
+        # Should call snapshot_download twice:
+        # 1. First with local_files_only=True
+        # 2. Then without local_files_only to update
+        assert mock_snapshot.call_count == 2
+        mock_snapshot.assert_any_call(
+            hub.repo_id, repo_type=hub.repo_type, local_files_only=True
+        )
+        mock_snapshot.assert_any_call(hub.repo_id, repo_type=hub.repo_type)
+        mock_utime.assert_called_once_with("/fake/cache/path", None)
