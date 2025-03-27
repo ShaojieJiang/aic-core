@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import BaseModel
 from aic_core.agent.agent_hub import AgentHub
+from huggingface_hub.errors import LocalEntryNotFoundError
 
 
 # Test fixtures and helper classes
@@ -281,3 +282,41 @@ def test_layzy_update():
         )
         mock_snapshot.assert_any_call(hub.repo_id, repo_type=hub.repo_type)
         mock_utime.assert_called_once_with("/fake/cache/path", None)
+
+
+@patch('aic_core.agent.agent_hub.hf_hub_download')
+def test_get_file_path_remote_download(mock_hf_download):
+    """Test get_file_path when file is not found locally."""
+    hub = AgentHub("test-repo")
+    
+    # Mock the _layzy_update method
+    with patch.object(hub, '_layzy_update'):
+        # Setup mock to first raise LocalEntryNotFoundError, then return a path
+        mock_hf_download.side_effect = [
+            LocalEntryNotFoundError("File not found locally"),
+            "/path/to/downloaded/file.py"
+        ]
+        
+        result = hub.get_file_path("test_tool", hub.tools_dir)
+        
+        # Verify the function was called twice with correct parameters
+        assert mock_hf_download.call_count == 2
+        
+        # First call should try local files only
+        mock_hf_download.assert_any_call(
+            repo_id="test-repo",
+            filename="test_tool.py",
+            subfolder="tools",
+            local_files_only=True,
+            repo_type="space"
+        )
+        
+        # Second call should try remote download
+        mock_hf_download.assert_any_call(
+            repo_id="test-repo",
+            filename="test_tool.py",
+            subfolder="tools",
+            repo_type="space"
+        )
+        
+        assert result == "/path/to/downloaded/file.py"
