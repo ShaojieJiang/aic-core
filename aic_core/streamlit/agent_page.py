@@ -25,11 +25,11 @@ class AgentPage(AICPage, AgentSelectorMixin):
     """Chatbot page."""
 
     def __init__(
-        self, repo_id: str, caller_path: str, page_title: str = "Agent"
+        self, repo_id: str, page_state: PageState, page_title: str = "Agent"
     ) -> None:
         """Initialize the page."""
         super().__init__()
-        self.page_state = app_state_registry(PageState, caller_path)
+        self.page_state = page_state
         self.repo_id = repo_id
         self.page_title = page_title
         self.user_role = "user"
