@@ -25,19 +25,20 @@ class AgentPage(AICPage, AgentSelectorMixin):
     """Chatbot page."""
 
     def __init__(
-        self, repo_id: str, page_state: PageState, page_title: str = "Agent"
+        self, repo_id: str, page_title: str = "Agent"
     ) -> None:
         """Initialize the page."""
         super().__init__()
-        self.page_state = page_state
         self.repo_id = repo_id
         self.page_title = page_title
         self.user_role = "user"
         self.assistant_role = "assistant"
+        if "chat_history" not in st.session_state:
+            st.session_state["chat_history"] = []
 
     def reset_chat_history(self) -> None:
         """Reset chat history."""
-        self.page_state.chat_history = []
+        st.session_state["chat_history"] = []
 
     def get_agent(self, agent_name: str) -> Agent:
         """Get agent."""
@@ -49,14 +50,14 @@ class AgentPage(AICPage, AgentSelectorMixin):
 
     async def get_response(self, user_input: str, agent: Agent) -> None:
         """Get response from agent."""
-        history = self.page_state.chat_history
+        history = st.session_state["chat_history"]
         st.chat_message(self.user_role).write(user_input)
         if agent._mcp_servers:
             async with agent.run_mcp_servers():
                 result = await agent.run(user_input, message_history=history)  # type: ignore
         else:
             result = await agent.run(user_input, message_history=history)  # type: ignore
-        self.page_state.chat_history.extend(result.new_messages())
+        st.session_state["chat_history"].extend(result.new_messages())
 
     def to_simple_messages(
         self, msg_parts: list[ModelRequestPart] | list[ModelResponsePart]
@@ -76,7 +77,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
 
     def display_chat_history(self) -> None:
         """Display chat history."""
-        for msg in self.page_state.chat_history:
+        for msg in st.session_state["chat_history"]:
             simp_msgs = self.to_simple_messages(msg.parts)
             for simp_msg in simp_msgs:
                 st.chat_message(simp_msg[0]).write(simp_msg[1])
