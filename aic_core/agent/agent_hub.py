@@ -3,12 +3,14 @@
 import importlib
 import json
 import os
+import time
 from collections.abc import Callable
 from types import ModuleType
 from huggingface_hub import delete_file
 from huggingface_hub import hf_hub_download
 from huggingface_hub import snapshot_download
 from huggingface_hub import upload_file
+from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
 
 
@@ -24,6 +26,7 @@ class AgentHub:
     agents_dir: str = "agents"
     result_types_dir: str = "result_types"
     repo_type: str = "space"
+    update_interval: int = 600
 
     def __init__(self, repo_id: str) -> None:
         """Initialize the Hugging Face Hub."""
@@ -44,6 +47,20 @@ class AgentHub:
             filename = f"{filename}{extension}"
         return filename
 
+    def _layzy_update(self) -> None:
+        """Lazily update the local cache.
+
+        Update the repo only when self.get_file_path is called, and when
+        interval has passed.
+        """
+        cache_path = snapshot_download(
+            self.repo_id, repo_type=self.repo_type, local_files_only=True
+        )
+        last_modified = os.path.getmtime(cache_path)
+        if time.time() - last_modified > self.update_interval:
+            snapshot_download(self.repo_id, repo_type=self.repo_type)
+            os.utime(cache_path, None)
+
     def download_files(self) -> None:
         """Download all files from the Hugging Face Hub.
 
@@ -57,6 +74,7 @@ class AgentHub:
 
     def get_file_path(self, filename: str, subdir: str) -> str:
         """Get the local path to a file in the repo."""
+        self._layzy_update()
         match subdir:
             case self.tools_dir:
                 extension = ".py"
@@ -71,13 +89,21 @@ class AgentHub:
                 raise ValueError(f"Invalid subdir: {subdir}")
 
         filename = self._check_extension(filename, extension)
-        file_path = hf_hub_download(
-            repo_id=self.repo_id,
-            filename=filename,
-            subfolder=subfolder,
-            local_files_only=True,
-            repo_type=self.repo_type,
-        )
+        try:
+            file_path = hf_hub_download(
+                repo_id=self.repo_id,
+                filename=filename,
+                subfolder=subfolder,
+                local_files_only=True,
+                repo_type=self.repo_type,
+            )
+        except LocalEntryNotFoundError:
+            file_path = hf_hub_download(
+                repo_id=self.repo_id,
+                filename=filename,
+                subfolder=subfolder,
+                repo_type=self.repo_type,
+            )
         return file_path
 
     def delete_file(self, filename: str, subdir: str) -> None:
