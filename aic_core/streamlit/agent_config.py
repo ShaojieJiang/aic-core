@@ -40,7 +40,9 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
             options=result_type_options,
             default=config.result_type,
         )
-        system_prompt = st.text_area("System prompt", value=config.system_prompt)
+        system_prompt = st.text_area(
+            "System prompt", value=config.system_prompt, height=500
+        )
         temperature = st.slider(
             "Temperature",
             min_value=0.0,
@@ -67,7 +69,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         result_tool_name = st.text_input(
             "Result tool name", value=config.result_tool_name
         )
-        result_tool_description = st.text_area(
+        result_tool_description = st.text_input(
             "Result tool description", value=config.result_tool_description
         )
         result_retries = st.number_input(
