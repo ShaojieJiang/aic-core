@@ -10,11 +10,12 @@ from pydantic_ai.messages import UserPromptPart
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent import AgentFactory
 from aic_core.streamlit.agent_page import AgentPage
+from aic_core.streamlit.agent_page import PageState
 
 
 @pytest.fixture
 def agent_page():
-    return AgentPage(repo_id="test-repo")
+    return AgentPage(repo_id="test-repo", page_state=PageState())
 
 
 @pytest.fixture
@@ -39,7 +40,7 @@ def test_reset_chat_history(agent_page):
 
 def test_get_agent():
     # Setup
-    agent_page = AgentPage(repo_id="test-repo")
+    agent_page = AgentPage(repo_id="test-repo", page_state=PageState())
     mock_agent = MagicMock(spec=Agent)
     mock_config = MagicMock(spec=AgentConfig)
 

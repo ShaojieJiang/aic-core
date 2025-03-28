@@ -18,7 +18,7 @@ from aic_core.streamlit.page import app_state
 @app_state(__file__)
 class PageState:
     """Page state.
-    
+
     Acting as a template here. Must be defined in the page that uses it.
     """
 
