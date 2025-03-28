@@ -130,10 +130,12 @@ def test_run(mock_button, mock_chat_input, mock_title, agent_page):
     agent_page.agent_selector = MagicMock()
     agent_page.get_agent = MagicMock()
 
-    agent_page.run()
+    with patch.object(agent_page, "display_chat_history") as mock_display_chat_history:
+        agent_page.run()
 
-    mock_title.assert_called_once_with("Agent")
-    mock_button.assert_called_once_with(
-        "Reset chat history", on_click=agent_page.reset_chat_history
-    )
-    mock_chat_input.assert_called_once_with("Enter a message")
+        mock_title.assert_called_once_with("Agent")
+        mock_button.assert_called_once_with(
+            "Reset chat history", on_click=agent_page.reset_chat_history
+        )
+        mock_chat_input.assert_called_once_with("Enter a message")
+        mock_display_chat_history.assert_called_once()

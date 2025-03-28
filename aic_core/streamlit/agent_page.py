@@ -12,10 +12,8 @@ from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent import AgentFactory
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.page import AICPage
-from aic_core.streamlit.page import app_state
 
 
-@app_state(__file__)
 class PageState:
     """Page state.
 
