@@ -3,12 +3,14 @@
 import importlib
 import json
 import os
+import time
 from collections.abc import Callable
 from types import ModuleType
 from huggingface_hub import delete_file
 from huggingface_hub import hf_hub_download
 from huggingface_hub import snapshot_download
 from huggingface_hub import upload_file
+from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
 
 
@@ -22,8 +24,9 @@ class AgentHub:
 
     tools_dir: str = "tools"
     agents_dir: str = "agents"
-    pydantic_models_dir: str = "pydantic_models"
+    result_types_dir: str = "result_types"
     repo_type: str = "space"
+    update_interval: int = 600
 
     def __init__(self, repo_id: str) -> None:
         """Initialize the Hugging Face Hub."""
@@ -44,26 +47,40 @@ class AgentHub:
             filename = f"{filename}{extension}"
         return filename
 
-    def download_files(self) -> None:
+    def _lazy_update(self) -> None:
+        """Lazily update the local cache.
+
+        Update the repo only when self.get_file_path is called, and when
+        interval has passed.
+        """
+        cache_path = self.download_files(local_files_only=True)
+        last_modified = os.path.getmtime(cache_path)
+        if time.time() - last_modified > self.update_interval:
+            self.download_files()
+            os.utime(cache_path, None)
+
+    def download_files(self, local_files_only: bool = False) -> str:
         """Download all files from the Hugging Face Hub.
 
         This should be called at the service start up, as well as when any
         changes are made to the repo.
         """
-        snapshot_download(
+        return snapshot_download(
             repo_id=self.repo_id,
             repo_type=self.repo_type,
+            local_files_only=local_files_only,
         )
 
     def get_file_path(self, filename: str, subdir: str) -> str:
         """Get the local path to a file in the repo."""
+        self._lazy_update()
         match subdir:
             case self.tools_dir:
                 extension = ".py"
                 subfolder = self.tools_dir
-            case self.pydantic_models_dir:
+            case self.result_types_dir:
                 extension = ".py"
-                subfolder = self.pydantic_models_dir
+                subfolder = self.result_types_dir
             case self.agents_dir:
                 extension = ".json"
                 subfolder = self.agents_dir
@@ -71,13 +88,21 @@ class AgentHub:
                 raise ValueError(f"Invalid subdir: {subdir}")
 
         filename = self._check_extension(filename, extension)
-        file_path = hf_hub_download(
-            repo_id=self.repo_id,
-            filename=filename,
-            subfolder=subfolder,
-            local_files_only=True,
-            repo_type=self.repo_type,
-        )
+        try:
+            file_path = hf_hub_download(
+                repo_id=self.repo_id,
+                filename=filename,
+                subfolder=subfolder,
+                local_files_only=True,
+                repo_type=self.repo_type,
+            )
+        except LocalEntryNotFoundError:
+            file_path = hf_hub_download(
+                repo_id=self.repo_id,
+                filename=filename,
+                subfolder=subfolder,
+                repo_type=self.repo_type,
+            )
         return file_path
 
     def delete_file(self, filename: str, subdir: str) -> None:
@@ -109,12 +134,12 @@ class AgentHub:
 
         return func
 
-    def load_structured_output(self, filename: str) -> type[BaseModel] | None:
-        """Load a structured output from the Hugging Face Hub."""
+    def load_result_type(self, filename: str) -> type[BaseModel] | None:
+        """Load a result type from the Hugging Face Hub."""
         if not filename:  # pragma: no cover
             return None
         name_without_extension = filename.split(".")[0]
-        file_path = self.get_file_path(filename, self.pydantic_models_dir)
+        file_path = self.get_file_path(filename, self.result_types_dir)
         module = self._load_module(name_without_extension, file_path)
         model = getattr(module, name_without_extension)
         assert isinstance(model, type) and issubclass(model, BaseModel)
@@ -131,7 +156,7 @@ class AgentHub:
         match subdir:
             case self.tools_dir:
                 extension = ".py"
-            case self.pydantic_models_dir:
+            case self.result_types_dir:
                 extension = ".py"
             case self.agents_dir:
                 extension = ".json"

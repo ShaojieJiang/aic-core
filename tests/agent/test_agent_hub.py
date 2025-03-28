@@ -1,10 +1,12 @@
+import time
 from collections.abc import Callable
 from unittest.mock import Mock
 from unittest.mock import mock_open
 from unittest.mock import patch
 import pytest
+from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
-from aic_core.agent_hub import AgentHub
+from aic_core.agent.agent_hub import AgentHub
 
 
 # Test fixtures and helper classes
@@ -28,25 +30,30 @@ def test_init():
     assert repo.repo_id == "test-repo"
 
 
-@patch("aic_core.agent_hub.snapshot_download")
+@patch("aic_core.agent.agent_hub.snapshot_download")
 def test_load_files(mock_snapshot):
     repo = AgentHub("test-repo")
     repo.download_files()
-    mock_snapshot.assert_called_once_with(repo_id="test-repo", repo_type="space")
+    mock_snapshot.assert_called_once_with(
+        repo_id="test-repo", repo_type="space", local_files_only=False
+    )
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
 def test_load_config(mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "config.json"
 
-    with patch("builtins.open", mock_open(read_data='{"key": "value"}')):
+    with (
+        patch("builtins.open", mock_open(read_data='{"key": "value"}')),
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
+    ):
         result = repo.load_config("config")
         assert result == {"key": "value"}
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
-@patch("aic_core.agent_hub.importlib.util")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.importlib.util")
 def test_load_tool(mock_importlib, mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "/path/to/tool.py"
@@ -60,12 +67,15 @@ def test_load_tool(mock_importlib, mock_download):
     mock_importlib.spec_from_file_location.return_value = mock_spec
     mock_importlib.module_from_spec.return_value = mock_module
 
-    result = repo.load_tool("tool")
-    assert isinstance(result, Callable)
+    with (
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
+    ):
+        result = repo.load_tool("tool")
+        assert isinstance(result, Callable)
 
 
-@patch("aic_core.agent_hub.hf_hub_download")
-@patch("aic_core.agent_hub.importlib.util")
+@patch("aic_core.agent.agent_hub.hf_hub_download")
+@patch("aic_core.agent.agent_hub.importlib.util")
 def test_load_structured_output(mock_importlib, mock_download):
     repo = AgentHub("test-repo")
     mock_download.return_value = "/path/to/model.py"
@@ -79,8 +89,11 @@ def test_load_structured_output(mock_importlib, mock_download):
     mock_importlib.spec_from_file_location.return_value = mock_spec
     mock_importlib.module_from_spec.return_value = mock_module
 
-    result = repo.load_structured_output("model")
-    assert issubclass(result, BaseModel)
+    with (
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
+    ):
+        result = repo.load_result_type("model")
+        assert issubclass(result, BaseModel)
 
 
 def test_upload_content():
@@ -93,14 +106,14 @@ def test_upload_content():
         (
             "test_model",
             "from pydantic import BaseModel\nclass test_model(BaseModel): pass",
-            "pydantic_models",
+            "result_types",
             ".py",
         ),
         ("test_config", '{"key": "value"}', "agents", ".json"),
     ]
 
     for filename, content, subdir, extension in test_cases:
-        with patch("aic_core.agent_hub.upload_file") as mock_upload:
+        with patch("aic_core.agent.agent_hub.upload_file") as mock_upload:
             # Call the method
             repo.upload_content(filename, content, subdir)
 
@@ -125,7 +138,7 @@ def test_upload_content_with_extension():
     repo = AgentHub("test-repo")
 
     with (
-        patch("aic_core.agent_hub.upload_file") as mock_upload,
+        patch("aic_core.agent.agent_hub.upload_file") as mock_upload,
     ):
         # Call with filename that already has extension
         repo.upload_content("test_tool.py", "content", "tools")
@@ -143,7 +156,7 @@ def test_upload_content_with_extension():
 def test_list_files_existing_directory():
     """Test listing files in an existing directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
         patch("os.path.isdir") as mock_isdir,
         patch("os.listdir") as mock_listdir,
@@ -169,7 +182,7 @@ def test_list_files_existing_directory():
 def test_list_files_nonexistent_directory():
     """Test listing files in a non-existent directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
     ):
         mock_snapshot.return_value = "/fake/repo/path"
@@ -184,7 +197,7 @@ def test_list_files_nonexistent_directory():
 def test_list_files_not_a_directory():
     """Test listing files when path exists but is not a directory."""
     with (
-        patch("aic_core.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.exists") as mock_exists,
         patch("os.path.isdir") as mock_isdir,
     ):
@@ -198,7 +211,7 @@ def test_list_files_not_a_directory():
         assert files == []
 
 
-@pytest.mark.parametrize("subdir", ["tools", "agents", "pydantic_models"])
+@pytest.mark.parametrize("subdir", ["tools", "agents", "result_types"])
 def test_delete_file_valid_subdirs(subdir):
     # Arrange
     repo_id = "test-repo"
@@ -206,7 +219,7 @@ def test_delete_file_valid_subdirs(subdir):
     filename = "test_file"
 
     # Act
-    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+    with patch("aic_core.agent.agent_hub.delete_file") as mock_delete:
         hub.delete_file(filename, subdir)
 
     # Assert
@@ -223,10 +236,85 @@ def test_delete_file_invalid_subdir():
     invalid_subdir = "invalid_dir"
 
     # Act & Assert
-    with patch("aic_core.agent_hub.delete_file") as mock_delete:
+    with patch("aic_core.agent.agent_hub.delete_file") as mock_delete:
         hub.delete_file(filename, invalid_subdir)
         mock_delete.assert_called_once_with(
             path_in_repo=f"{invalid_subdir}/{filename}",
             repo_id=repo_id,
             repo_type="space",
         )
+
+
+def test_lazy_update():
+    """Test the _lazy_update method."""
+    with (
+        patch("aic_core.agent.agent_hub.AgentHub.download_files") as mock_download,
+        patch("os.path.getmtime") as mock_getmtime,
+        patch("os.utime") as mock_utime,
+    ):
+        # Setup
+        hub = AgentHub("test-repo")
+        mock_download.return_value = "/fake/cache/path"
+
+        # Test case 1: Cache is fresh (no update needed)
+        mock_getmtime.return_value = time.time()  # Current time
+        hub._lazy_update()
+        # Should only call snapshot_download once with local_files_only=True
+        assert mock_download.call_count == 1
+        mock_download.assert_called_with(local_files_only=True)
+        mock_utime.assert_not_called()
+
+        # Reset mocks
+        mock_download.reset_mock()
+        mock_utime.reset_mock()
+
+        # Test case 2: Cache is stale (update needed)
+        mock_getmtime.return_value = time.time() - (
+            hub.update_interval + 100
+        )  # Old timestamp
+        hub._lazy_update()
+        # Should call snapshot_download twice:
+        # 1. First with local_files_only=True
+        # 2. Then without local_files_only to update
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(local_files_only=True)
+        mock_download.assert_any_call()
+        mock_utime.assert_called_once_with("/fake/cache/path", None)
+
+
+@patch("aic_core.agent.agent_hub.hf_hub_download")
+def test_get_file_path_remote_download(mock_hf_download):
+    """Test get_file_path when file is not found locally."""
+    hub = AgentHub("test-repo")
+
+    # Mock the _lazy_update method
+    with patch.object(hub, "_lazy_update"):
+        # Setup mock to first raise LocalEntryNotFoundError, then return a path
+        mock_hf_download.side_effect = [
+            LocalEntryNotFoundError("File not found locally"),
+            "/path/to/downloaded/file.py",
+        ]
+
+        result = hub.get_file_path("test_tool", hub.tools_dir)
+
+        # Verify the function was called twice with correct parameters
+        assert mock_hf_download.call_count == 2
+
+        # First call should try local files only
+        mock_hf_download.assert_any_call(
+            repo_id="test-repo",
+            filename="test_tool.py",
+            subfolder="tools",
+            local_files_only=True,
+            repo_type="space",
+        )
+
+        # Second call should try remote download
+        mock_hf_download.assert_any_call(
+            repo_id="test-repo",
+            filename="test_tool.py",
+            subfolder="tools",
+            repo_type="space",
+        )
+
+        assert result == "/path/to/downloaded/file.py"

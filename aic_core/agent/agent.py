@@ -2,6 +2,7 @@
 
 from typing import Any
 from typing import Union
+import logfire
 from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
 from pydantic import Field
@@ -12,7 +13,11 @@ from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from smolagents import load_tool
-from aic_core.agent_hub import AgentHub
+from aic_core.agent.agent_hub import AgentHub
+
+
+logfire.configure()
+logfire.instrument_pydantic_ai()
 
 
 class AgentConfig(BaseModel):
@@ -47,6 +52,8 @@ class AgentConfig(BaseModel):
     """Whether to defer model check for the agent."""
     end_strategy: str = "early"
     """End strategy for the agent."""
+    instrument: bool = False
+    """Whether to instrument the agent."""
     config_version: str = "0.0.1"
     """Version of the agent config."""
     repo_id: str = Field()
@@ -100,8 +107,6 @@ class AgentFactory:
         """Creates a Union type from a list of types."""
         if not self.config.result_type:
             return str
-        if len(self.config.result_type) == 1:
-            return eval(self.config.result_type[0])
 
         type_objects = []
         for type_str in self.config.result_type:
@@ -110,8 +115,10 @@ class AgentFactory:
                 type_objects.append(eval(type_str))
             except NameError:  # Structured output
                 hf_repo = AgentHub(self.config.repo_id)
-                type_objects.append(hf_repo.load_structured_output(type_str))
+                type_objects.append(hf_repo.load_result_type(type_str))
 
+        if len(type_objects) == 1:
+            return type_objects[0]
         # Create a new type using Union
         return Union.__getitem__(tuple(type_objects))
 
@@ -136,7 +143,7 @@ class AgentFactory:
             servers.append(MCPServerStdio(command, args))
         return servers
 
-    def create_agent(self, api_key: str) -> Agent:
+    def create_agent(self, api_key: str | None = None) -> Agent:
         """Create an agent from a config."""
         result_type = self.get_result_type()
         model_name = self.config.model.split(":")[1]
@@ -157,4 +164,5 @@ class AgentFactory:
             mcp_servers=self.get_mcp_servers(),  # type: ignore[arg-type]
             defer_model_check=self.config.defer_model_check,
             end_strategy=self.config.end_strategy,  # type: ignore[arg-type]
+            instrument=self.config.instrument,
         )
