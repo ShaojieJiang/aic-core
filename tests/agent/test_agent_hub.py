@@ -34,7 +34,9 @@ def test_init():
 def test_load_files(mock_snapshot):
     repo = AgentHub("test-repo")
     repo.download_files()
-    mock_snapshot.assert_called_once_with(repo_id="test-repo", repo_type="space")
+    mock_snapshot.assert_called_once_with(
+        repo_id="test-repo", repo_type="space", local_files_only=False
+    )
 
 
 @patch("aic_core.agent.agent_hub.hf_hub_download")
@@ -246,26 +248,24 @@ def test_delete_file_invalid_subdir():
 def test_lazy_update():
     """Test the _lazy_update method."""
     with (
-        patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
+        patch("aic_core.agent.agent_hub.AgentHub.download_files") as mock_download,
         patch("os.path.getmtime") as mock_getmtime,
         patch("os.utime") as mock_utime,
     ):
         # Setup
         hub = AgentHub("test-repo")
-        mock_snapshot.return_value = "/fake/cache/path"
+        mock_download.return_value = "/fake/cache/path"
 
         # Test case 1: Cache is fresh (no update needed)
         mock_getmtime.return_value = time.time()  # Current time
         hub._lazy_update()
         # Should only call snapshot_download once with local_files_only=True
-        assert mock_snapshot.call_count == 1
-        mock_snapshot.assert_called_with(
-            hub.repo_id, repo_type=hub.repo_type, local_files_only=True
-        )
+        assert mock_download.call_count == 1
+        mock_download.assert_called_with(local_files_only=True)
         mock_utime.assert_not_called()
 
         # Reset mocks
-        mock_snapshot.reset_mock()
+        mock_download.reset_mock()
         mock_utime.reset_mock()
 
         # Test case 2: Cache is stale (update needed)
@@ -276,11 +276,9 @@ def test_lazy_update():
         # Should call snapshot_download twice:
         # 1. First with local_files_only=True
         # 2. Then without local_files_only to update
-        assert mock_snapshot.call_count == 2
-        mock_snapshot.assert_any_call(
-            hub.repo_id, repo_type=hub.repo_type, local_files_only=True
-        )
-        mock_snapshot.assert_any_call(hub.repo_id, repo_type=hub.repo_type)
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(local_files_only=True)
+        mock_download.assert_any_call()
         mock_utime.assert_called_once_with("/fake/cache/path", None)
 
 

@@ -53,15 +53,13 @@ class AgentHub:
         Update the repo only when self.get_file_path is called, and when
         interval has passed.
         """
-        cache_path = snapshot_download(
-            self.repo_id, repo_type=self.repo_type, local_files_only=True
-        )
+        cache_path = self.download_files(local_files_only=True)
         last_modified = os.path.getmtime(cache_path)
         if time.time() - last_modified > self.update_interval:
-            snapshot_download(self.repo_id, repo_type=self.repo_type)
+            self.download_files()
             os.utime(cache_path, None)
 
-    def download_files(self) -> None:
+    def download_files(self, local_files_only: bool = False) -> None:
         """Download all files from the Hugging Face Hub.
 
         This should be called at the service start up, as well as when any
@@ -70,6 +68,7 @@ class AgentHub:
         snapshot_download(
             repo_id=self.repo_id,
             repo_type=self.repo_type,
+            local_files_only=local_files_only,
         )
 
     def get_file_path(self, filename: str, subdir: str) -> str:
