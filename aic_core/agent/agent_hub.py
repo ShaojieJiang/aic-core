@@ -59,13 +59,13 @@ class AgentHub:
             self.download_files()
             os.utime(cache_path, None)
 
-    def download_files(self, local_files_only: bool = False) -> None:
+    def download_files(self, local_files_only: bool = False) -> str:
         """Download all files from the Hugging Face Hub.
 
         This should be called at the service start up, as well as when any
         changes are made to the repo.
         """
-        snapshot_download(
+        return snapshot_download(
             repo_id=self.repo_id,
             repo_type=self.repo_type,
             local_files_only=local_files_only,
