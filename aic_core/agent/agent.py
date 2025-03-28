@@ -17,7 +17,7 @@ from aic_core.agent.agent_hub import AgentHub
 
 
 logfire.configure()
-logfire.instrument_asyncpg()
+logfire.instrument_pydantic_ai()
 
 
 class AgentConfig(BaseModel):
