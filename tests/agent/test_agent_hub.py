@@ -44,7 +44,7 @@ def test_load_config(mock_download):
 
     with (
         patch("builtins.open", mock_open(read_data='{"key": "value"}')),
-        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
     ):
         result = repo.load_config("config")
         assert result == {"key": "value"}
@@ -66,7 +66,7 @@ def test_load_tool(mock_importlib, mock_download):
     mock_importlib.module_from_spec.return_value = mock_module
 
     with (
-        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
     ):
         result = repo.load_tool("tool")
         assert isinstance(result, Callable)
@@ -88,7 +88,7 @@ def test_load_structured_output(mock_importlib, mock_download):
     mock_importlib.module_from_spec.return_value = mock_module
 
     with (
-        patch("aic_core.agent.agent_hub.AgentHub._layzy_update"),
+        patch("aic_core.agent.agent_hub.AgentHub._lazy_update"),
     ):
         result = repo.load_result_type("model")
         assert issubclass(result, BaseModel)
@@ -243,8 +243,8 @@ def test_delete_file_invalid_subdir():
         )
 
 
-def test_layzy_update():
-    """Test the _layzy_update method."""
+def test_lazy_update():
+    """Test the _lazy_update method."""
     with (
         patch("aic_core.agent.agent_hub.snapshot_download") as mock_snapshot,
         patch("os.path.getmtime") as mock_getmtime,
@@ -256,7 +256,7 @@ def test_layzy_update():
 
         # Test case 1: Cache is fresh (no update needed)
         mock_getmtime.return_value = time.time()  # Current time
-        hub._layzy_update()
+        hub._lazy_update()
         # Should only call snapshot_download once with local_files_only=True
         assert mock_snapshot.call_count == 1
         mock_snapshot.assert_called_with(
@@ -272,7 +272,7 @@ def test_layzy_update():
         mock_getmtime.return_value = time.time() - (
             hub.update_interval + 100
         )  # Old timestamp
-        hub._layzy_update()
+        hub._lazy_update()
         # Should call snapshot_download twice:
         # 1. First with local_files_only=True
         # 2. Then without local_files_only to update
@@ -289,8 +289,8 @@ def test_get_file_path_remote_download(mock_hf_download):
     """Test get_file_path when file is not found locally."""
     hub = AgentHub("test-repo")
 
-    # Mock the _layzy_update method
-    with patch.object(hub, "_layzy_update"):
+    # Mock the _lazy_update method
+    with patch.object(hub, "_lazy_update"):
         # Setup mock to first raise LocalEntryNotFoundError, then return a path
         mock_hf_download.side_effect = [
             LocalEntryNotFoundError("File not found locally"),

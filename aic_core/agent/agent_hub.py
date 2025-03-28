@@ -47,7 +47,7 @@ class AgentHub:
             filename = f"{filename}{extension}"
         return filename
 
-    def _layzy_update(self) -> None:
+    def _lazy_update(self) -> None:
         """Lazily update the local cache.
 
         Update the repo only when self.get_file_path is called, and when
@@ -74,7 +74,7 @@ class AgentHub:
 
     def get_file_path(self, filename: str, subdir: str) -> str:
         """Get the local path to a file in the repo."""
-        self._layzy_update()
+        self._lazy_update()
         match subdir:
             case self.tools_dir:
                 extension = ".py"
