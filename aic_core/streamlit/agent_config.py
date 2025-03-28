@@ -88,6 +88,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
             "Defer model check", value=config.defer_model_check
         )
         end_strategy = st.selectbox("End strategy", ["early", "exhaustive"])
+        instrument = st.toggle("Instrument", value=config.instrument)
         name = st.text_input("Name", value=config.name)
 
         return AgentConfig(
@@ -105,6 +106,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
             defer_model_check=defer_model_check,
             end_strategy=end_strategy,
             name=name,
+            instrument=instrument,
             repo_id=self.repo_id,
         )
 

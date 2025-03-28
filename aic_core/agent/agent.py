@@ -2,6 +2,7 @@
 
 from typing import Any
 from typing import Union
+import logfire
 from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
 from pydantic import Field
@@ -13,6 +14,10 @@ from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from smolagents import load_tool
 from aic_core.agent.agent_hub import AgentHub
+
+
+logfire.configure()
+logfire.instrument_asyncpg()
 
 
 class AgentConfig(BaseModel):
@@ -47,6 +52,8 @@ class AgentConfig(BaseModel):
     """Whether to defer model check for the agent."""
     end_strategy: str = "early"
     """End strategy for the agent."""
+    instrument: bool = False
+    """Whether to instrument the agent."""
     config_version: str = "0.0.1"
     """Version of the agent config."""
     repo_id: str = Field()
@@ -157,4 +164,5 @@ class AgentFactory:
             mcp_servers=self.get_mcp_servers(),  # type: ignore[arg-type]
             defer_model_check=self.config.defer_model_check,
             end_strategy=self.config.end_strategy,  # type: ignore[arg-type]
+            instrument=self.config.instrument,
         )

@@ -29,11 +29,12 @@ authors = [{name = "Shaojie Jiang", email = "shaojie.jiang1@gmail.com"}]
 dependencies = [
   "httpx>=0.28.1",
   "huggingface-hub>=0.29.3",
+  "logfire>=3.11.0",
   "pydantic>=2.10.6",
   "pydantic-ai>=0.0.43",
   "smolagents>=1.11.0",
   "streamlit>=1.44.0",
-  "streamlit-code-editor>=0.1.22",
+  "streamlit-code-editor>=0.1.22"
 ]
 description = "An Agentic platform that allows you to define extensions"
 license = {file = "LICENSE"}
