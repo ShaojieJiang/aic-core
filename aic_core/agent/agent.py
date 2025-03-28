@@ -107,8 +107,6 @@ class AgentFactory:
         """Creates a Union type from a list of types."""
         if not self.config.result_type:
             return str
-        if len(self.config.result_type) == 1:
-            return eval(self.config.result_type[0])
 
         type_objects = []
         for type_str in self.config.result_type:
@@ -119,6 +117,8 @@ class AgentFactory:
                 hf_repo = AgentHub(self.config.repo_id)
                 type_objects.append(hf_repo.load_result_type(type_str))
 
+        if len(type_objects) == 1:
+            return type_objects[0]
         # Create a new type using Union
         return Union.__getitem__(tuple(type_objects))
 
