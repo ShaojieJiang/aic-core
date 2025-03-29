@@ -1,10 +1,9 @@
 """Feedly MCP server."""
 
-import httpx
-from feedly.api_client.session import FeedlySession
-from feedly.api_client.stream import StreamOptions
 from mcp.server.fastmcp import FastMCP
 from aic_core.logging import get_logger
+from feedly.api_client.session import FeedlySession
+from feedly.api_client.stream import StreamOptions
 
 
 server = FastMCP("Feedly MCP")
@@ -47,23 +46,23 @@ def mark_as_read(entry_id: str, feedly_token: str | None = None) -> None:
         entry_id: The id of the entry to mark as read.
         feedly_token: The Feedly token to use.
     """
-    session = FeedlySession(auth=feedly_token)
-    access_token = session.auth.auth_token
-    url = "https://cloud.feedly.com/v3/markers"
+    # session = FeedlySession(auth=feedly_token)
+    # access_token = session.auth.auth_token
+    # url = "https://cloud.feedly.com/v3/markers"
 
-    headers = {
-        "Authorization": f"OAuth {access_token}",
-        "Content-Type": "application/json",
-    }
+    # headers = {
+    #     "Authorization": f"OAuth {access_token}",
+    #     "Content-Type": "application/json",
+    # }
 
-    payload = {"action": "markAsRead", "type": "entries", "entryIds": [entry_id]}
+    # payload = {"action": "markAsRead", "type": "entries", "entryIds": [entry_id]}
 
-    response = httpx.post(url, json=payload, headers=headers)
+    # response = httpx.post(url, json=payload, headers=headers)
 
-    if response.status_code == 200:
-        logger.info("Entry marked as read successfully.")
-    else:
-        logger.error(
-            f"Failed to mark entry as read. Status code: {response.status_code}"
-        )
+    # if response.status_code == 200:
+    #     logger.info("Entry marked as read successfully.")
+    # else:
+    #     logger.error(
+    #         f"Failed to mark entry as read. Status code: {response.status_code}"
+    #     )
     logger.info(f"Marking entry {entry_id} as read.")
