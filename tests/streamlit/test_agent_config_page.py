@@ -2,6 +2,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import pytest
 from aic_core.agent.agent import AgentConfig
+from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.agent_config import AgentConfigPage
 
 
@@ -68,8 +69,8 @@ def test_configure(agent_config_page, mock_streamlit):
 def test_save_config(agent_config_page):
     """Test saving configuration."""
     mock_config = Mock(spec=AgentConfig)
-
-    agent_config_page.save_config(mock_config)
+    with patch.object(AgentHub, "download_files"):
+        agent_config_page.save_config(mock_config)
 
     mock_config.push_to_hub.assert_called_once()
 
