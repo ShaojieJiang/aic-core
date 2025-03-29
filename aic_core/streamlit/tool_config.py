@@ -3,7 +3,6 @@
 import importlib.util
 import os
 import sys
-from abc import abstractmethod
 from types import ModuleType
 import streamlit as st
 from code_editor import code_editor
@@ -70,18 +69,16 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
         except Exception as e:  # pragma: no cover
             st.error(f"Error loading code as module: {str(e)}")
             st.stop()
-        self.re_download_files()
-
-    @abstractmethod
-    def re_download_files(self) -> None:
-        """Re-download the files."""
-        pass  # pragma: no cover
+        hf_repo.download_files()
 
     def edit_tool(self, tool_name: str) -> None:
         """Edit tool."""
         hf_repo = AgentHub(self.repo_id)
         if tool_name:
-            file_path = hf_repo.get_file_path(tool_name, AgentHub.tools_dir)
+            try:
+                file_path = hf_repo.get_file_path(tool_name, AgentHub.tools_dir)
+            except FileNotFoundError:
+                file_path = hf_repo.get_file_path(tool_name, AgentHub.result_types_dir)
             with open(file_path) as f:
                 default_code = f.read()
         else:
