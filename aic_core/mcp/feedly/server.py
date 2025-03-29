@@ -62,7 +62,7 @@ def read_uninteresting(entry_id: str, feedly_token: str | None = None) -> None:
     # response = httpx.post(url, json=payload, headers=headers)
 
     # if response.status_code == 200:
-    #     logger.info("Entry marked as read successfully.")
+    #     logger.info(f"Marking entry {entry_id} as read.")
     # else:
     #     logger.error(
     #         f"Failed to mark entry as read. Status code: {response.status_code}"
