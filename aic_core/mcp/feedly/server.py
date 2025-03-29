@@ -1,5 +1,6 @@
 """Feedly MCP server."""
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 from aic_core.logging import get_logger
 from feedly.api_client.session import FeedlySession
@@ -48,23 +49,22 @@ def read_uninteresting(entry_id: str, feedly_token: str | None = None) -> None:
         feedly_token: The Feedly token to use. If not provided, the token will
             be fetched from the environment.
     """
-    # session = FeedlySession(auth=feedly_token)
-    # access_token = session.auth.auth_token
-    # url = "https://cloud.feedly.com/v3/markers"
+    session = FeedlySession(auth=feedly_token)
+    access_token = session.auth.auth_token
+    url = "https://cloud.feedly.com/v3/markers"
 
-    # headers = {
-    #     "Authorization": f"OAuth {access_token}",
-    #     "Content-Type": "application/json",
-    # }
+    headers = {
+        "Authorization": f"OAuth {access_token}",
+        "Content-Type": "application/json",
+    }
 
-    # payload = {"action": "markAsRead", "type": "entries", "entryIds": [entry_id]}
+    payload = {"action": "markAsRead", "type": "entries", "entryIds": [entry_id]}
 
-    # response = httpx.post(url, json=payload, headers=headers)
+    response = httpx.post(url, json=payload, headers=headers)
 
-    # if response.status_code == 200:
-    #     logger.info(f"Marking entry {entry_id} as read.")
-    # else:
-    #     logger.error(
-    #         f"Failed to mark entry as read. Status code: {response.status_code}"
-    #     )
-    logger.info(f"Marking entry {entry_id} as read.")
+    if response.status_code == 200:
+        logger.info(f"Marking entry {entry_id} as read.")
+    else:
+        logger.error(
+            f"Failed to mark entry as read. Status code: {response.status_code}"
+        )
