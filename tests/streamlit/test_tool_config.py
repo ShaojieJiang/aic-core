@@ -2,6 +2,7 @@ from unittest.mock import Mock
 from unittest.mock import mock_open
 from unittest.mock import patch
 import pytest
+from huggingface_hub.errors import EntryNotFoundError
 from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.tool_config import ToolConfigPage
 
@@ -81,9 +82,9 @@ def test_edit_tool_existing(tool_config):
         mock_editor.assert_called_once()
         mock_input.assert_called_once()
 
-    # Case where FileNotFoundError is raised
-    mock_hub.get_file_path.side_effect = FileNotFoundError
-    with pytest.raises(FileNotFoundError):
+    # Case where EntryNotFoundError is raised
+    mock_hub.get_file_path.side_effect = EntryNotFoundError
+    with pytest.raises(EntryNotFoundError):
         tool_config.edit_tool("existing_tool")
 
 

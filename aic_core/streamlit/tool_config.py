@@ -6,6 +6,7 @@ import sys
 from types import ModuleType
 import streamlit as st
 from code_editor import code_editor
+from huggingface_hub.errors import EntryNotFoundError
 from pydantic import BaseModel
 from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.mixins import ToolSelectorMixin
@@ -77,7 +78,7 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
         if tool_name:
             try:
                 file_path = hf_repo.get_file_path(tool_name, AgentHub.tools_dir)
-            except FileNotFoundError:
+            except EntryNotFoundError:
                 file_path = hf_repo.get_file_path(tool_name, AgentHub.result_types_dir)
             with open(file_path) as f:
                 default_code = f.read()
