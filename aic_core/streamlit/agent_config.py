@@ -90,6 +90,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         end_strategy = st.selectbox("End strategy", ["early", "exhaustive"])
         instrument = st.toggle("Instrument", value=config.instrument)
         name = st.text_input("Name", value=config.name)
+        name = name.replace(" ", "_")
 
         return AgentConfig(
             model=model,
