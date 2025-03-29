@@ -19,7 +19,8 @@ def get_feedly_news(
     Args:
         max_count: The maximum number of news to get.
         category: The category of the news to get.
-        feedly_token: The Feedly token to use.
+        feedly_token: The Feedly token to use. If not provided, the token will
+            be fetched from the environment.
     """
     session = FeedlySession(auth=feedly_token)
     category_name = session.user.user_categories.get(category)
@@ -39,12 +40,13 @@ def get_feedly_news(
 
 
 @server.tool()
-def mark_as_read(entry_id: str, feedly_token: str | None = None) -> None:
-    """Mark an entry as read.
+def read_uninteresting(entry_id: str, feedly_token: str | None = None) -> None:
+    """Mark an uninteresting entry as read.
 
     Args:
         entry_id: The id of the entry to mark as read.
-        feedly_token: The Feedly token to use.
+        feedly_token: The Feedly token to use. If not provided, the token will
+            be fetched from the environment.
     """
     # session = FeedlySession(auth=feedly_token)
     # access_token = session.auth.auth_token
