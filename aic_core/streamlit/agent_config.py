@@ -2,6 +2,7 @@
 
 from typing import get_args
 import streamlit as st
+from code_editor import code_editor
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent_hub import AgentHub
@@ -40,9 +41,13 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
             options=result_type_options,
             default=config.result_type,
         )
-        system_prompt = st.text_area(
-            "System prompt", value=config.system_prompt, height=500
-        )
+        st.write("**System prompt**")
+        system_prompt = code_editor(
+            config.system_prompt,
+            lang="markdown",
+            response_mode="debounce",
+            options={"wrap": True},
+        )["text"]
         temperature = st.slider(
             "Temperature",
             min_value=0.0,

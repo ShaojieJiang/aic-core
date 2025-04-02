@@ -88,14 +88,12 @@ class ToolConfigPage(AICPage, ToolSelectorMixin):
                 default_code = f.read()
 
         code = code_editor(
-            default_code, lang="python", height=300, options={"wrap": True}
+            default_code,
+            lang="python",
+            response_mode="debounce",
+            options={"wrap": True},
         )
 
-        if not code["text"]:  # pragma: no cover
-            st.warning(
-                "Not saved. "
-                "Press `Control + Enter` (Windows) or `Command + Enter` (Mac) to save."
-            )
         tool_name = st.text_input(
             "Tool name",
             value=tool_name,
