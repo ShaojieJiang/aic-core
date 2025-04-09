@@ -2,6 +2,8 @@ from unittest.mock import Mock
 from unittest.mock import mock_open
 from unittest.mock import patch
 import pytest
+from huggingface_hub.errors import EntryNotFoundError
+from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.tool_config import ToolConfigPage
 
 
@@ -18,7 +20,7 @@ def test_load_code_as_module(tool_config):
     code = """
 def test_function():
     return "Hello"
-    
+
 class TestClass:
     pass
 """
@@ -47,7 +49,11 @@ def test_save_tool(tool_config, tool_name, code, is_model):
 
 
 def test_save_tool_invalid_definition(tool_config):
-    with patch("streamlit.error") as mock_error, patch("streamlit.stop") as mock_stop:
+    with (
+        patch("streamlit.error") as mock_error,
+        patch("streamlit.stop") as mock_stop,
+        patch.object(AgentHub, "download_files"),
+    ):
         tool_config.save_tool("missing_tool", "def other_tool(): pass")
         mock_error.assert_called_once_with(
             "Definition `missing_tool` not found in module"
@@ -75,6 +81,11 @@ def test_edit_tool_existing(tool_config):
         mock_hub.get_file_path.assert_called_once()
         mock_editor.assert_called_once()
         mock_input.assert_called_once()
+
+    # Case where EntryNotFoundError is raised
+    mock_hub.get_file_path.side_effect = EntryNotFoundError
+    with pytest.raises(EntryNotFoundError):
+        tool_config.edit_tool("existing_tool")
 
 
 def test_edit_tool_new(tool_config):

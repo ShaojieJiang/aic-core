@@ -1,10 +1,11 @@
 """Agent config page."""
 
-from abc import abstractmethod
 from typing import get_args
 import streamlit as st
+from code_editor import code_editor
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
+from aic_core.agent.agent_hub import AgentHub
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.mixins import ToolSelectorMixin
 from aic_core.streamlit.page import AICPage
@@ -40,9 +41,13 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
             options=result_type_options,
             default=config.result_type,
         )
-        system_prompt = st.text_area(
-            "System prompt", value=config.system_prompt, height=500
-        )
+        st.write("**System prompt**")
+        system_prompt = code_editor(
+            config.system_prompt,
+            lang="markdown",
+            response_mode="debounce",
+            options={"wrap": True},
+        )["text"]
         temperature = st.slider(
             "Temperature",
             min_value=0.0,
@@ -90,6 +95,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         end_strategy = st.selectbox("End strategy", ["early", "exhaustive"])
         instrument = st.toggle("Instrument", value=config.instrument)
         name = st.text_input("Name", value=config.name)
+        name = name.replace(" ", "_")
 
         return AgentConfig(
             model=model,
@@ -113,12 +119,8 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     def save_config(self, config: AgentConfig) -> None:
         """Save the config and trigger a re-download of the files."""
         config.push_to_hub()
-        self.re_download_files()
-
-    @abstractmethod
-    def re_download_files(self) -> None:
-        """Re-download the files."""
-        pass  # pragma: no cover
+        hf_repo = AgentHub(self.repo_id)
+        hf_repo.download_files()
 
     def run(self) -> None:
         """Main function."""
