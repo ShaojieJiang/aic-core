@@ -9,11 +9,14 @@ from aic_core.streamlit.agent_config import AgentConfigPage
 @pytest.fixture
 def mock_streamlit():
     """Mock streamlit components."""
-    with patch("aic_core.streamlit.agent_config.st") as mock_st:
+    with (
+        patch("aic_core.streamlit.agent_config.st") as mock_st,
+        patch("aic_core.streamlit.agent_config.code_editor") as mock_code_editor,
+    ):
         # Configure default mock returns for streamlit widgets
         mock_st.selectbox.return_value = "openai:gpt-4"
         mock_st.multiselect.return_value = ["str"]
-        mock_st.text_area.return_value = "test prompt"
+        mock_code_editor.return_value = {"text": "test prompt"}
         mock_st.slider.return_value = 1.0
         mock_st.number_input.return_value = 3
         mock_st.text_input.return_value = "test_name"
