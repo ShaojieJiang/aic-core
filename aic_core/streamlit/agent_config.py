@@ -26,7 +26,9 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     def configure(self, config: AgentConfig) -> AgentConfig:
         """Widgets to configure the agent."""
         model_options = [
-            model for model in get_args(KnownModelName) if model.startswith("openai")
+            model
+            for model in get_args(KnownModelName.__value__)
+            if model.startswith("openai")
         ]
         model = st.selectbox(
             "Select a model",
