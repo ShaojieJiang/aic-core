@@ -1,19 +1,17 @@
 """Agent module."""
 
-from typing import Any
-from typing import Union
+from typing import Any, Union
 import logfire
 from huggingface_hub.errors import LocalEntryNotFoundError
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic_ai import Agent
-from pydantic_ai import Tool
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, Tool
 from pydantic_ai.agent import ModelSettings
 from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from smolagents import load_tool
 from aic_core.agent.agent_hub import AgentHub
+from aic_core.agent.result_types import ComponentRegistry
 
 
 logfire.configure()
@@ -108,19 +106,23 @@ class AgentFactory:
         if not self.config.result_type:
             return str
 
-        type_objects = []
+        type_classes: list[Any] = []
+        known_types = ComponentRegistry.get_registered_components()
         for type_str in self.config.result_type:
             # Handle built-in types and local class types
             try:
-                type_objects.append(eval(type_str))
+                if type_str in known_types:
+                    type_classes.append(ComponentRegistry.get_component_class(type_str))
+                else:
+                    type_classes.append(eval(type_str))
             except NameError:  # Structured output
                 hf_repo = AgentHub(self.config.repo_id)
-                type_objects.append(hf_repo.load_result_type(type_str))
+                type_classes.append(hf_repo.load_result_type(type_str))
 
-        if len(type_objects) == 1:
-            return type_objects[0]
+        if len(type_classes) == 1:
+            return type_classes[0]
         # Create a new type using Union
-        return Union.__getitem__(tuple(type_objects))
+        return Union.__getitem__(tuple(type_classes))
 
     def get_tools(self) -> list[Tool]:
         """Get the tools from known tools and hf tools."""

@@ -1,8 +1,6 @@
 import time
 from collections.abc import Callable
-from unittest.mock import Mock
-from unittest.mock import mock_open
-from unittest.mock import patch
+from unittest.mock import Mock, mock_open, patch
 import pytest
 from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel

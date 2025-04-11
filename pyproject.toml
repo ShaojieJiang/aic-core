@@ -33,7 +33,7 @@ dependencies = [
   "logfire>=3.11.0",
   "mcp[cli]>=1.5.0",
   "pydantic>=2.10.6",
-  "pydantic-ai>=0.0.43",
+  "pydantic-ai>=0.0.55",
   "smolagents>=1.11.0",
   "streamlit>=1.44.0",
   "streamlit-code-editor>=0.1.22"
@@ -100,7 +100,6 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true
 known-first-party = ["aic_core"]
 lines-after-imports = 2
 no-lines-before = ["future", "standard-library", "third-party", "first-party", "local-folder"]

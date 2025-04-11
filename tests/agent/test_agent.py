@@ -1,13 +1,10 @@
 from typing import Union
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import pytest
 from huggingface_hub.errors import LocalEntryNotFoundError
-from pydantic_ai import Agent
-from pydantic_ai import Tool
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
-from aic_core.agent.agent import MCPServerStdio
+from pydantic_ai import Agent, Tool
+from aic_core.agent.agent import AgentConfig, AgentFactory, MCPServerStdio
+from aic_core.agent.result_types import TableOutput
 
 
 def test_agent_config_initialization():
@@ -159,6 +156,12 @@ def test_get_result_type_structured_output(mock_agent_hub, agent_factory):
 
     # Verify the resulting Union type contains both str and our custom type
     assert result == Union.__getitem__((str, mock_custom_type))
+
+
+def test_get_result_type_known_type(agent_factory):
+    agent_factory.config.result_type = ["TableOutput"]
+    result = agent_factory.get_result_type()
+    assert result == TableOutput
 
 
 @patch("aic_core.agent.agent.AgentHub")

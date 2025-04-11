@@ -6,8 +6,8 @@ from code_editor import code_editor
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent_hub import AgentHub
-from aic_core.streamlit.mixins import AgentSelectorMixin
-from aic_core.streamlit.mixins import ToolSelectorMixin
+from aic_core.agent.result_types import ComponentRegistry
+from aic_core.streamlit.mixins import AgentSelectorMixin, ToolSelectorMixin
 from aic_core.streamlit.page import AICPage
 
 
@@ -19,15 +19,24 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         super().__init__()
         self.repo_id = repo_id
 
-    def list_result_type_options(self) -> list[str]:
+    def list_result_type_options(self) -> dict[str, str]:
         """List all result types."""
-        primitive_types = ["str", "int", "float", "bool"]
-        return primitive_types + self.list_result_type_names(self.repo_id)
+        python_types = {type: f"{type} (P)" for type in ["str", "int", "float", "bool"]}
+        internal_types = {
+            type: f"{type} (I)"
+            for type in ComponentRegistry.get_registered_components()
+        }
+        external_types = {
+            type: f"{type} (E)" for type in self.list_result_type_names(self.repo_id)
+        }
+        return {**python_types, **internal_types, **external_types}
 
     def configure(self, config: AgentConfig) -> AgentConfig:
         """Widgets to configure the agent."""
         model_options = [
-            model for model in get_args(KnownModelName) if model.startswith("openai")
+            model
+            for model in get_args(KnownModelName.__value__)
+            if model.startswith("openai")
         ]
         model = st.selectbox(
             "Select a model",
@@ -37,8 +46,9 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
 
         result_type_options = self.list_result_type_options()
         result_type = st.multiselect(
-            "Result type",
+            "Result type (**P**: Python, **I**: Internal, **E**: External)",
             options=result_type_options,
+            format_func=lambda x: result_type_options[x],
             default=config.result_type,
         )
         st.write("**System prompt**")
@@ -100,7 +110,7 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
         return AgentConfig(
             model=model,
             result_type=result_type,
-            system_prompt=system_prompt,
+            system_prompt=system_prompt or config.system_prompt,
             model_settings=model_settings,
             retries=retries,
             result_tool_name=result_tool_name,

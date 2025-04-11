@@ -1,16 +1,17 @@
 import asyncio
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelRequest
-from pydantic_ai.messages import TextPart
-from pydantic_ai.messages import UserPromptPart
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
-from aic_core.streamlit.agent_page import AgentPage
-from aic_core.streamlit.agent_page import PageState
+from pydantic_ai.messages import (
+    ModelRequest,
+    TextPart,
+    ToolCallPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
+from aic_core.agent.agent import AgentConfig, AgentFactory
+from aic_core.agent.result_types import ComponentRegistry
+from aic_core.streamlit.agent_page import AgentPage, PageState
 
 
 @pytest.fixture
@@ -94,23 +95,6 @@ def test_get_response_with_mcp_servers(agent_page, mock_agent):
         assert agent_page.page_state.chat_history == ["message1"]
 
 
-def test_to_simple_messages(agent_page):
-    # Test with TextPart
-    text_part = TextPart(content="Hello")
-    result = agent_page.to_simple_messages([text_part])
-    assert result == [("assistant", "Hello")]
-
-    # Test with UserPromptPart
-    user_part = UserPromptPart(content="Hi")
-    result = agent_page.to_simple_messages([user_part])
-    assert result == [("user", "Hi")]
-
-    # Test with mixed parts
-    mixed_parts = [text_part, user_part]
-    result = agent_page.to_simple_messages(mixed_parts)
-    assert result == [("assistant", "Hello"), ("user", "Hi")]
-
-
 def test_display_chat_history(agent_page):
     message = ModelRequest(
         parts=[TextPart(content="Hello"), UserPromptPart(content="Hi")]
@@ -139,3 +123,59 @@ def test_run(mock_button, mock_chat_input, mock_title, agent_page):
         )
         mock_chat_input.assert_called_once_with("Enter a message")
         mock_display_chat_history.assert_called_once()
+
+
+def test_display_parts(agent_page):
+    """Test display_parts method with different message parts."""
+    # Mock streamlit components
+    mock_chat_message = MagicMock()
+    mock_chat_message.return_value.write = MagicMock()
+
+    # Test TextPart
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        agent_page.display_parts([TextPart(content="Hello")], None)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test UserPromptPart
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        agent_page.display_parts([UserPromptPart(content="Hi")], None)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test ToolCallPart with valid component
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        with patch.object(ComponentRegistry, "contains_component", return_value=True):
+            with patch.object(
+                ComponentRegistry, "generate_st_component"
+            ) as mock_generate:
+                tool_call = ToolCallPart(
+                    tool_name="test_tool",
+                    args="{}",
+                    tool_call_id="123",
+                    part_kind="tool-call",
+                )
+                tool_return = ToolReturnPart(
+                    tool_name="test_tool",
+                    content="result",
+                    tool_call_id="123",
+                    part_kind="tool-return",
+                )
+                agent_page.display_parts([tool_call], tool_return)
+                mock_generate.assert_called_once_with(tool_call, tool_return)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test ToolCallPart with invalid component
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        with patch.object(ComponentRegistry, "contains_component", return_value=False):
+            tool_call = ToolCallPart(
+                tool_name="invalid_tool",
+                args="{}",
+                tool_call_id="123",
+                part_kind="tool-call",
+            )
+            agent_page.display_parts([tool_call], None)

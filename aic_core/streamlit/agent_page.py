@@ -3,13 +3,17 @@
 import asyncio
 import streamlit as st
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelMessage
-from pydantic_ai.messages import ModelRequestPart
-from pydantic_ai.messages import ModelResponsePart
-from pydantic_ai.messages import TextPart
-from pydantic_ai.messages import UserPromptPart
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
+from pydantic_ai.messages import (
+    ModelMessage,
+    ModelRequestPart,
+    ModelResponsePart,
+    TextPart,
+    ToolCallPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
+from aic_core.agent.agent import AgentConfig, AgentFactory
+from aic_core.agent.result_types import ComponentRegistry
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.page import AICPage
 
@@ -64,28 +68,35 @@ class AgentPage(AICPage, AgentSelectorMixin):
             result = await agent.run(user_input, message_history=history)  # type: ignore
         self.page_state.chat_history.extend(result.new_messages())
 
-    def to_simple_messages(
-        self, msg_parts: list[ModelRequestPart] | list[ModelResponsePart]
-    ) -> list[tuple[str, str]]:
-        """Convert message parts to simple messages."""
-        result = []
+    def display_parts(
+        self,
+        msg_parts: list[ModelRequestPart] | list[ModelResponsePart],
+        next_msg_part: ModelRequestPart | ModelResponsePart | None,
+    ) -> None:
+        """Display message parts."""
         for part in msg_parts:
             match part:
                 case TextPart():
-                    result.append((self.assistant_role, part.content))
+                    st.chat_message(self.assistant_role).write(part.content)
                 case UserPromptPart():
-                    result.append((self.user_role, part.content))  # type: ignore
+                    st.chat_message(self.user_role).write(part.content)
+                case ToolCallPart():
+                    if not ComponentRegistry.contains_component(part.tool_name):
+                        return
+
+                    assert isinstance(next_msg_part, ToolReturnPart)
+                    with st.chat_message(self.assistant_role):
+                        ComponentRegistry.generate_st_component(part, next_msg_part)
                 case _:  # pragma: no cover
                     pass
 
-        return result
-
     def display_chat_history(self) -> None:
         """Display chat history."""
-        for msg in self.page_state.chat_history:
-            simp_msgs = self.to_simple_messages(msg.parts)
-            for simp_msg in simp_msgs:
-                st.chat_message(simp_msg[0]).write(simp_msg[1])
+        history_shifted = self.page_state.chat_history[1:] + [None]
+        for msg, next_msg in zip(
+            self.page_state.chat_history, history_shifted, strict=False
+        ):
+            self.display_parts(msg.parts, None if not next_msg else next_msg.parts[0])
 
     def run(self) -> None:
         """Run the page."""

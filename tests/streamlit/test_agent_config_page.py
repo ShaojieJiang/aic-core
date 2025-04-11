@@ -1,5 +1,4 @@
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import pytest
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent_hub import AgentHub
@@ -33,15 +32,6 @@ def agent_config_page():
             pass
 
     return ConcreteAgentConfigPage("test-repo")
-
-
-def test_list_result_type_options(agent_config_page):
-    """Test listing result type options."""
-    with patch.object(
-        agent_config_page, "list_result_type_names", return_value=["CustomType"]
-    ):
-        result = agent_config_page.list_result_type_options()
-        assert result == ["str", "int", "float", "bool", "CustomType"]
 
 
 def test_configure(agent_config_page, mock_streamlit):

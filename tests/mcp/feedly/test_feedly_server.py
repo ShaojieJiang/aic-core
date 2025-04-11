@@ -1,8 +1,6 @@
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import pytest
-from aic_core.mcp.feedly.server import get_feedly_news
-from aic_core.mcp.feedly.server import read_uninteresting
+from aic_core.mcp.feedly.server import get_feedly_news, read_uninteresting
 
 
 @pytest.fixture

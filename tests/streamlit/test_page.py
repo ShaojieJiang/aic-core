@@ -1,7 +1,6 @@
 import pytest
 from streamlit import session_state
-from aic_core.streamlit.page import AICPage
-from aic_core.streamlit.page import app_state
+from aic_core.streamlit.page import AICPage, app_state
 
 
 def test_app_state_decorator():
