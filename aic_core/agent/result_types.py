@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any, Literal
 import streamlit as st
 from pydantic import BaseModel
-from pydantic_ai.messages import ToolCallPart
+from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 
 
 class ComponentRegistry:
@@ -60,22 +60,28 @@ class ComponentRegistry:
         return list(cls._registry.keys())
 
     @classmethod
-    def generate_st_component(cls, part: ToolCallPart) -> Any:
+    def generate_st_component(
+        cls,
+        tool_call_part: ToolCallPart,
+        tool_return_part: ToolReturnPart | None = None,
+    ) -> Any:
         """Generate a component based on the parameters."""
 
         def _input_callback(key: str) -> None:  # pragma: no cover
             value = st.session_state[key]
-            updated_args = part.args_as_dict()
+            updated_args = tool_call_part.args_as_dict()
             updated_args.update({"user_input": value})
-            part.args = (
+            tool_call_part.args = (
                 updated_args
-                if isinstance(part.args, dict)
+                if isinstance(tool_call_part.args, dict)
                 else json.dumps(updated_args)
             )
+            if tool_return_part:  # pragma: no cover
+                tool_return_part.content = f"User input: {value}"
 
-        class_name = part.tool_name.replace("final_result_", "")
+        class_name = tool_call_part.tool_name.replace("final_result_", "")
         model = ComponentRegistry.get_component_class(class_name)
-        params = model.model_validate(part.args_as_dict())
+        params = model.model_validate(tool_call_part.args_as_dict())
 
         comp_type = params.type
         comp_func = getattr(st, comp_type)
