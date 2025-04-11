@@ -6,6 +6,7 @@ from code_editor import code_editor
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent_hub import AgentHub
+from aic_core.agent.result_types import ComponentRegistry
 from aic_core.streamlit.mixins import AgentSelectorMixin, ToolSelectorMixin
 from aic_core.streamlit.page import AICPage
 
@@ -21,7 +22,8 @@ class AgentConfigPage(AICPage, AgentSelectorMixin, ToolSelectorMixin):
     def list_result_type_options(self) -> list[str]:
         """List all result types."""
         primitive_types = ["str", "int", "float", "bool"]
-        return primitive_types + self.list_result_type_names(self.repo_id)
+        known_types = ComponentRegistry.get_registered_components()
+        return primitive_types + known_types + self.list_result_type_names(self.repo_id)
 
     def configure(self, config: AgentConfig) -> AgentConfig:
         """Widgets to configure the agent."""
