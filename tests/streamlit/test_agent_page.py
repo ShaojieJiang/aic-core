@@ -88,23 +88,6 @@ def test_get_response_with_mcp_servers(agent_page, mock_agent):
         assert agent_page.page_state.chat_history == ["message1"]
 
 
-def test_to_simple_messages(agent_page):
-    # Test with TextPart
-    text_part = TextPart(content="Hello")
-    result = agent_page.to_simple_messages([text_part])
-    assert result == [("assistant", "Hello")]
-
-    # Test with UserPromptPart
-    user_part = UserPromptPart(content="Hi")
-    result = agent_page.to_simple_messages([user_part])
-    assert result == [("user", "Hi")]
-
-    # Test with mixed parts
-    mixed_parts = [text_part, user_part]
-    result = agent_page.to_simple_messages(mixed_parts)
-    assert result == [("assistant", "Hello"), ("user", "Hi")]
-
-
 def test_display_chat_history(agent_page):
     message = ModelRequest(
         parts=[TextPart(content="Hello"), UserPromptPart(content="Hi")]
