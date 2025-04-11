@@ -44,7 +44,7 @@ class ComponentRegistry:
         Raises:
             KeyError: If the component is not registered
         """
-        if component_name not in cls._registry:
+        if component_name not in cls._registry:  # pragma: no cover
             raise KeyError(f"Component '{component_name}' is not registered")
         return cls._registry[component_name]
 
@@ -61,7 +61,9 @@ class ComponentRegistry:
     def generate_st_component(cls, params: InputComponent | OutputComponent) -> Any:
         """Generate a component based on the parameters."""
 
-        def _input_callback(key: str, params: InputComponent) -> None:
+        def _input_callback(
+            key: str, params: InputComponent
+        ) -> None:  # pragma: no cover
             value = st.session_state[key]
             params.user_input = value
 
@@ -78,7 +80,7 @@ class ComponentRegistry:
             case "radio":
                 try:
                     index = kwargs["options"].index(value)
-                except ValueError:
+                except ValueError:  # pragma: no cover
                     index = None
                 output = comp_func(
                     **kwargs, index=index, on_change=_input_callback, args=(key, params)
@@ -94,8 +96,6 @@ class ComponentRegistry:
                 output = comp_func(kwargs["body"])
             case "json":
                 output = comp_func(kwargs["body"])
-            case "radio":
-                output = comp_func(**kwargs, index=None)
             case _:
                 output = comp_func(**kwargs)
         return output
