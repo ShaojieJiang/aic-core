@@ -209,3 +209,27 @@ def test_generate_json_output(mock_streamlit):
     mock_streamlit["json"].assert_called_once_with(
         {"key": "value", "number": 42, "list": [1, 2, 3]}
     )
+
+
+def test_contains_component():
+    """Test checking if a component is registered."""
+    # Test with registered component without prefix
+    assert ComponentRegistry.contains_component("TextInput") is True
+    assert ComponentRegistry.contains_component("NumberInput") is True
+    assert ComponentRegistry.contains_component("Choice") is True
+    assert ComponentRegistry.contains_component("TextOutput") is True
+    assert ComponentRegistry.contains_component("TableOutput") is True
+
+    # Test with registered component with prefix
+    assert ComponentRegistry.contains_component("final_result_TextInput") is True
+    assert ComponentRegistry.contains_component("final_result_NumberInput") is True
+    assert ComponentRegistry.contains_component("final_result_Choice") is True
+    assert ComponentRegistry.contains_component("final_result_TextOutput") is True
+    assert ComponentRegistry.contains_component("final_result_TableOutput") is True
+
+    # Test with unregistered component
+    assert ComponentRegistry.contains_component("NonExistentComponent") is False
+    assert (
+        ComponentRegistry.contains_component("final_result_NonExistentComponent")
+        is False
+    )

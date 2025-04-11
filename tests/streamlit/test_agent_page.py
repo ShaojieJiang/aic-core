@@ -2,8 +2,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelRequest, TextPart, UserPromptPart
+from pydantic_ai.messages import (
+    ModelRequest,
+    TextPart,
+    ToolCallPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
 from aic_core.agent.agent import AgentConfig, AgentFactory
+from aic_core.agent.result_types import ComponentRegistry
 from aic_core.streamlit.agent_page import AgentPage, PageState
 
 
@@ -116,3 +123,59 @@ def test_run(mock_button, mock_chat_input, mock_title, agent_page):
         )
         mock_chat_input.assert_called_once_with("Enter a message")
         mock_display_chat_history.assert_called_once()
+
+
+def test_display_parts(agent_page):
+    """Test display_parts method with different message parts."""
+    # Mock streamlit components
+    mock_chat_message = MagicMock()
+    mock_chat_message.return_value.write = MagicMock()
+
+    # Test TextPart
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        agent_page.display_parts([TextPart(content="Hello")], None)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test UserPromptPart
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        agent_page.display_parts([UserPromptPart(content="Hi")], None)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test ToolCallPart with valid component
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        with patch.object(ComponentRegistry, "contains_component", return_value=True):
+            with patch.object(
+                ComponentRegistry, "generate_st_component"
+            ) as mock_generate:
+                tool_call = ToolCallPart(
+                    tool_name="test_tool",
+                    args="{}",
+                    tool_call_id="123",
+                    part_kind="tool-call",
+                )
+                tool_return = ToolReturnPart(
+                    tool_name="test_tool",
+                    content="result",
+                    tool_call_id="123",
+                    part_kind="tool-return",
+                )
+                agent_page.display_parts([tool_call], tool_return)
+                mock_generate.assert_called_once_with(tool_call, tool_return)
+
+    # Reset mock for next test
+    mock_chat_message.reset_mock()
+
+    # Test ToolCallPart with invalid component
+    with patch("streamlit.chat_message", return_value=mock_chat_message):
+        with patch.object(ComponentRegistry, "contains_component", return_value=False):
+            tool_call = ToolCallPart(
+                tool_name="invalid_tool",
+                args="{}",
+                tool_call_id="123",
+                part_kind="tool-call",
+            )
+            agent_page.display_parts([tool_call], None)

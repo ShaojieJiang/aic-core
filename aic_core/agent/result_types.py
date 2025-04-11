@@ -61,14 +61,7 @@ class ComponentRegistry:
 
     @classmethod
     def contains_component(cls, tool_name: str) -> bool:
-        """Check if a component is registered.
-
-        Args:
-            tool_name: The name of the tool
-
-        Returns:
-            True if the component is registered, False otherwise
-        """
+        """Check if a component is registered."""
         return tool_name.replace("final_result_", "") in cls._registry
 
     @classmethod
