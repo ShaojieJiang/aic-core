@@ -1,10 +1,12 @@
 """Streamlit MCP server with Pydantic models."""
 
 from __future__ import annotations
+import json
 from collections.abc import Callable
 from typing import Any, Literal
 import streamlit as st
 from pydantic import BaseModel
+from pydantic_ai.messages import ToolCallPart
 
 
 class ComponentRegistry:
@@ -58,14 +60,22 @@ class ComponentRegistry:
         return list(cls._registry.keys())
 
     @classmethod
-    def generate_st_component(cls, params: InputComponent | OutputComponent) -> Any:
+    def generate_st_component(cls, part: ToolCallPart) -> Any:
         """Generate a component based on the parameters."""
 
-        def _input_callback(
-            key: str, params: InputComponent
-        ) -> None:  # pragma: no cover
+        def _input_callback(key: str) -> None:  # pragma: no cover
             value = st.session_state[key]
-            params.user_input = value
+            updated_args = part.args_as_dict()
+            updated_args.update({"user_input": value})
+            part.args = (
+                updated_args
+                if isinstance(part.args, dict)
+                else json.dumps(updated_args)
+            )
+
+        class_name = part.tool_name.replace("final_result_", "")
+        model = ComponentRegistry.get_component_class(class_name)
+        params = model.model_validate(part.args_as_dict())
 
         comp_type = params.type
         comp_func = getattr(st, comp_type)
@@ -75,7 +85,7 @@ class ComponentRegistry:
         match comp_type:
             case "text_input" | "text_area" | "number_input" | "slider":
                 output = comp_func(
-                    **kwargs, value=value, on_change=_input_callback, args=(key, params)
+                    **kwargs, value=value, on_change=_input_callback, args=(key,)
                 )
             case "radio":
                 try:
@@ -83,16 +93,16 @@ class ComponentRegistry:
                 except ValueError:  # pragma: no cover
                     index = None
                 output = comp_func(
-                    **kwargs, index=index, on_change=_input_callback, args=(key, params)
+                    **kwargs, index=index, on_change=_input_callback, args=(key,)
                 )
             case "multiselect":
                 output = comp_func(
                     **kwargs,
                     default=value,
                     on_change=_input_callback,
-                    args=(key, params),
+                    args=(key,),
                 )
-            case "text" | "markdown" | "latex":
+            case "latex":
                 output = comp_func(kwargs["body"])
             case "json":
                 output = comp_func(kwargs["body"])
@@ -169,7 +179,7 @@ class Choice(InputComponent):
 class TextOutput(OutputComponent):
     """Parameters for text output components."""
 
-    type: Literal["text", "markdown", "latex", "code", "json"]
+    type: Literal["latex", "code", "json"]
     """Streamlit component type."""
     body: str | dict
     """Body for the component."""

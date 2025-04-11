@@ -1,5 +1,7 @@
+import json
 from unittest.mock import patch
 import pytest
+from pydantic_ai.messages import ToolCallPart
 from aic_core.agent.result_types import (
     Choice,
     ComponentRegistry,
@@ -57,8 +59,14 @@ def test_generate_text_input(mock_streamlit):
         help="Test help",
         user_input="initial value",
     )
+    part = ToolCallPart(
+        tool_name="final_result_TextInput",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
 
-    ComponentRegistry.generate_st_component(params)
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["text_input"].assert_called_once()
     call_args = mock_streamlit["text_input"].call_args[1]
@@ -79,8 +87,14 @@ def test_generate_number_input(mock_streamlit):
         step=1,
         user_input=42,
     )
+    part = ToolCallPart(
+        tool_name="final_result_NumberInput",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
 
-    ComponentRegistry.generate_st_component(params)
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["number_input"].assert_called_once()
     call_args = mock_streamlit["number_input"].call_args[1]
@@ -102,7 +116,13 @@ def test_generate_radio(mock_streamlit):
         user_input="option1",
     )
 
-    ComponentRegistry.generate_st_component(params)
+    part = ToolCallPart(
+        tool_name="final_result_Choice",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["radio"].assert_called_once()
     call_args = mock_streamlit["radio"].call_args[1]
@@ -122,7 +142,13 @@ def test_generate_multiselect(mock_streamlit):
         user_input=["option1", "option2"],
     )
 
-    ComponentRegistry.generate_st_component(params)
+    part = ToolCallPart(
+        tool_name="final_result_Choice",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["multiselect"].assert_called_once()
     call_args = mock_streamlit["multiselect"].call_args[1]
@@ -132,22 +158,19 @@ def test_generate_multiselect(mock_streamlit):
     assert call_args["default"] == ["option1", "option2"]
 
 
-def test_generate_text_output(mock_streamlit):
-    """Test generating a text output component."""
-    params = TextOutput(type="text", body="Test output text")
+def test_generate_latex_output(mock_streamlit):
+    """Test generating a latex output component."""
+    params = TextOutput(type="latex", body="Test output latex")
 
-    ComponentRegistry.generate_st_component(params)
+    part = ToolCallPart(
+        tool_name="final_result_TextOutput",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
+    ComponentRegistry.generate_st_component(part)
 
-    mock_streamlit["text"].assert_called_once_with("Test output text")
-
-
-def test_generate_markdown_output(mock_streamlit):
-    """Test generating a markdown output component."""
-    params = TextOutput(type="markdown", body="# Test Markdown")
-
-    ComponentRegistry.generate_st_component(params)
-
-    mock_streamlit["markdown"].assert_called_once_with("# Test Markdown")
+    mock_streamlit["latex"].assert_called_once_with("Test output latex")
 
 
 def test_generate_table_output(mock_streamlit):
@@ -156,7 +179,13 @@ def test_generate_table_output(mock_streamlit):
         type="table", data={"column1": [1, 2, 3], "column2": ["a", "b", "c"]}
     )
 
-    ComponentRegistry.generate_st_component(params)
+    part = ToolCallPart(
+        tool_name="final_result_TableOutput",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["table"].assert_called_once()
     call_args = mock_streamlit["table"].call_args[1]
@@ -169,7 +198,13 @@ def test_generate_json_output(mock_streamlit):
         type="json", body={"key": "value", "number": 42, "list": [1, 2, 3]}
     )
 
-    ComponentRegistry.generate_st_component(params)
+    part = ToolCallPart(
+        tool_name="final_result_TextOutput",
+        args=json.dumps(params.model_dump()),
+        tool_call_id="call_test",
+        part_kind="tool-call",
+    )
+    ComponentRegistry.generate_st_component(part)
 
     mock_streamlit["json"].assert_called_once_with(
         {"key": "value", "number": 42, "list": [1, 2, 3]}
