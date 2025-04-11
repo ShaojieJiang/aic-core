@@ -1,13 +1,10 @@
 """Agent module."""
 
-from typing import Any
-from typing import Union
+from typing import Any, Union
 import logfire
 from huggingface_hub.errors import LocalEntryNotFoundError
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic_ai import Agent
-from pydantic_ai import Tool
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, Tool
 from pydantic_ai.agent import ModelSettings
 from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.openai import OpenAIModel

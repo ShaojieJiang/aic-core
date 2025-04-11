@@ -3,13 +3,14 @@
 import asyncio
 import streamlit as st
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelMessage
-from pydantic_ai.messages import ModelRequestPart
-from pydantic_ai.messages import ModelResponsePart
-from pydantic_ai.messages import TextPart
-from pydantic_ai.messages import UserPromptPart
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
+from pydantic_ai.messages import (
+    ModelMessage,
+    ModelRequestPart,
+    ModelResponsePart,
+    TextPart,
+    UserPromptPart,
+)
+from aic_core.agent.agent import AgentConfig, AgentFactory
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.page import AICPage
 

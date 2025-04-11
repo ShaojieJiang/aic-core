@@ -6,8 +6,7 @@ from code_editor import code_editor
 from pydantic_ai.models import KnownModelName
 from aic_core.agent.agent import AgentConfig
 from aic_core.agent.agent_hub import AgentHub
-from aic_core.streamlit.mixins import AgentSelectorMixin
-from aic_core.streamlit.mixins import ToolSelectorMixin
+from aic_core.streamlit.mixins import AgentSelectorMixin, ToolSelectorMixin
 from aic_core.streamlit.page import AICPage
 
 

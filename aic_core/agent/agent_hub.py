@@ -6,10 +6,7 @@ import os
 import time
 from collections.abc import Callable
 from types import ModuleType
-from huggingface_hub import delete_file
-from huggingface_hub import hf_hub_download
-from huggingface_hub import snapshot_download
-from huggingface_hub import upload_file
+from huggingface_hub import delete_file, hf_hub_download, snapshot_download, upload_file
 from huggingface_hub.errors import LocalEntryNotFoundError
 from pydantic import BaseModel
 

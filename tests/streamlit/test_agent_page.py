@@ -1,16 +1,10 @@
 import asyncio
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelRequest
-from pydantic_ai.messages import TextPart
-from pydantic_ai.messages import UserPromptPart
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
-from aic_core.streamlit.agent_page import AgentPage
-from aic_core.streamlit.agent_page import PageState
+from pydantic_ai.messages import ModelRequest, TextPart, UserPromptPart
+from aic_core.agent.agent import AgentConfig, AgentFactory
+from aic_core.streamlit.agent_page import AgentPage, PageState
 
 
 @pytest.fixture

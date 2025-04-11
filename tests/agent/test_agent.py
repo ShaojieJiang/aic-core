@@ -1,13 +1,9 @@
 from typing import Union
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import pytest
 from huggingface_hub.errors import LocalEntryNotFoundError
-from pydantic_ai import Agent
-from pydantic_ai import Tool
-from aic_core.agent.agent import AgentConfig
-from aic_core.agent.agent import AgentFactory
-from aic_core.agent.agent import MCPServerStdio
+from pydantic_ai import Agent, Tool
+from aic_core.agent.agent import AgentConfig, AgentFactory, MCPServerStdio
 
 
 def test_agent_config_initialization():

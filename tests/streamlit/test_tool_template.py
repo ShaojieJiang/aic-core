@@ -1,6 +1,5 @@
 import pytest
-from aic_core.streamlit.tool_template import MyModel
-from aic_core.streamlit.tool_template import my_function
+from aic_core.streamlit.tool_template import MyModel, my_function
 
 
 def test_my_function():
