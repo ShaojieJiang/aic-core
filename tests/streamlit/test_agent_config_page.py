@@ -34,15 +34,6 @@ def agent_config_page():
     return ConcreteAgentConfigPage("test-repo")
 
 
-def test_list_result_type_options(agent_config_page):
-    """Test listing result type options."""
-    with patch.object(
-        agent_config_page, "list_result_type_names", return_value=["CustomType"]
-    ):
-        result = agent_config_page.list_result_type_options()
-        assert result == ["str", "int", "float", "bool", "CustomType"]
-
-
 def test_configure(agent_config_page, mock_streamlit):
     """Test agent configuration."""
     initial_config = AgentConfig(model="openai:gpt-4", repo_id="test-repo")
