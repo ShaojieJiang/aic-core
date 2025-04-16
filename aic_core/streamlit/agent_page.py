@@ -1,6 +1,7 @@
 """Agent page."""
 
 import asyncio
+import json
 import streamlit as st
 from pydantic_ai import Agent
 from pydantic_ai.messages import (
@@ -68,6 +69,22 @@ class AgentPage(AICPage, AgentSelectorMixin):
             result = await agent.run(user_input, message_history=history)  # type: ignore
         self.page_state.chat_history.extend(result.new_messages())
 
+    def input_callback(
+        self, key: str, tool_call_part: ToolCallPart, tool_return_part: ToolReturnPart
+    ) -> None:
+        """Callback for input components."""
+        value = st.session_state[key]
+        updated_args = tool_call_part.args_as_dict()
+        updated_args.update({"user_input": value})
+        tool_call_part.args = (
+            updated_args
+            if isinstance(tool_call_part.args, dict)
+            else json.dumps(updated_args)
+        )
+        if tool_return_part:
+            tool_return_part.content = f"User input: {value}"
+        asyncio.run(self.get_response(""))
+
     def display_parts(
         self,
         msg_parts: list[ModelRequestPart] | list[ModelResponsePart],
@@ -86,7 +103,9 @@ class AgentPage(AICPage, AgentSelectorMixin):
 
                     assert isinstance(next_msg_part, ToolReturnPart)
                     with st.chat_message(self.assistant_role):
-                        ComponentRegistry.generate_st_component(part, next_msg_part)
+                        ComponentRegistry.generate_st_component(
+                            part, next_msg_part, self.input_callback
+                        )
                 case _:  # pragma: no cover
                     pass
 

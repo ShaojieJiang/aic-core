@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, Tool
 from pydantic_ai.agent import ModelSettings
 from pydantic_ai.mcp import MCPServerStdio
+from pydantic_ai.messages import ModelMessage, RetryPromptPart
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from smolagents import load_tool
@@ -168,3 +169,48 @@ class AgentFactory:
             end_strategy=self.config.end_strategy,  # type: ignore[arg-type]
             instrument=self.config.instrument,
         )
+
+
+class AICAgent:
+    """A wrapper around the pydantic_ai.Agent class."""
+
+    def __init__(self, repo_id: str, agent_name: str) -> None:
+        """Initialize the agent."""
+        self.repo_id = repo_id
+        self.agent = self._get_agent(agent_name)
+
+    def _get_agent(self, agent_name: str) -> Agent:
+        """Get the agent given the agent name."""
+        agent_config = AgentConfig.from_hub(self.repo_id, agent_name)
+        agent_factory = AgentFactory(agent_config)
+        agent = agent_factory.create_agent()
+
+        return agent
+
+    async def get_response(
+        self,
+        user_prompt: str,
+        history: list[ModelMessage],
+        skip_retry_msgs: bool = True,
+    ) -> list[ModelMessage]:
+        """Get the response from the agent."""
+        if self.agent._mcp_servers:
+            async with self.agent.run_mcp_servers():
+                result = await self.agent.run(user_prompt, message_history=history)
+        else:
+            result = await self.agent.run(user_prompt, message_history=history)
+
+        new_messages = result.new_messages()
+        if skip_retry_msgs:
+            filtered_messages = []
+            i = 0
+            while i < len(new_messages):
+                if i + 1 < len(new_messages) and isinstance(
+                    new_messages[i + 1].parts[0], RetryPromptPart
+                ):
+                    i += 2  # Skip this message and the next one (RetryPromptPart)
+                else:
+                    filtered_messages.append(new_messages[i])
+                    i += 1
+            new_messages = filtered_messages
+        return new_messages
