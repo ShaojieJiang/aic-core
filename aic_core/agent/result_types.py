@@ -69,10 +69,11 @@ class ComponentRegistry:
         cls,
         tool_call_part: ToolCallPart,
         tool_return_part: ToolReturnPart | None = None,
+        input_callback: Callable | None = None,
     ) -> Any:
         """Generate a component based on the parameters."""
 
-        def _input_callback(key: str) -> None:  # pragma: no cover
+        def input_callback(key: str) -> None:  # pragma: no cover
             value = st.session_state[key]
             updated_args = tool_call_part.args_as_dict()
             updated_args.update({"user_input": value})
@@ -96,7 +97,10 @@ class ComponentRegistry:
         match comp_type:
             case "text_input" | "text_area" | "number_input" | "slider":
                 output = comp_func(
-                    **kwargs, value=value, on_change=_input_callback, args=(key,)
+                    **kwargs,
+                    value=value,
+                    on_change=input_callback,
+                    args=(key, tool_call_part, tool_return_part),
                 )
             case "radio":
                 try:
@@ -104,14 +108,17 @@ class ComponentRegistry:
                 except ValueError:  # pragma: no cover
                     index = None
                 output = comp_func(
-                    **kwargs, index=index, on_change=_input_callback, args=(key,)
+                    **kwargs,
+                    index=index,
+                    on_change=input_callback,
+                    args=(key, tool_call_part, tool_return_part),
                 )
             case "multiselect":
                 output = comp_func(
                     **kwargs,
                     default=value,
-                    on_change=_input_callback,
-                    args=(key,),
+                    on_change=input_callback,
+                    args=(key, tool_call_part, tool_return_part),
                 )
             case "latex":
                 output = comp_func(kwargs["body"])
@@ -187,22 +194,20 @@ class Choice(InputComponent):
 
 
 @ComponentRegistry.register()
-class TextOutput(OutputComponent):
-    """Parameters for text output components."""
+class JsonOutput(OutputComponent):
+    """Parameters for JSON output components."""
 
     type: Literal["latex", "code", "json"]
     """Streamlit component type."""
     body: str | dict
     """Body for the component."""
-    language: str = "python"
-    """Language for the component."""
 
 
 @ComponentRegistry.register()
 class TableOutput(OutputComponent):
     """Parameters for table output components."""
 
-    type: Literal["table", "dataframe"]
+    type: str = "dataframe"
     """Streamlit component type."""
-    data: dict
-    """Data dict for the component."""
+    data: list[dict]
+    """List of dictionaries for the component."""
