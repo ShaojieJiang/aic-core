@@ -100,8 +100,6 @@ class ComponentRegistry:
                     output = comp_func(
                         **kwargs,
                         value=value,
-                        on_change=input_callback,
-                        args=(key, tool_call_part, tool_return_part),
                     )
                 case "radio":
                     try:
@@ -111,15 +109,11 @@ class ComponentRegistry:
                     output = comp_func(
                         **kwargs,
                         index=index,
-                        on_change=input_callback,
-                        args=(key, tool_call_part, tool_return_part),
                     )
                 case "multiselect":
                     output = comp_func(
                         **kwargs,
                         default=value,
-                        on_change=input_callback,
-                        args=(key, tool_call_part, tool_return_part),
                     )
                 case "latex":
                     output = comp_func(kwargs["body"])
@@ -164,16 +158,6 @@ class OutputComponent(StreamlitComponent):
 
 
 @ComponentRegistry.register()
-class TextInput(InputComponent):
-    """Parameters for text input components."""
-
-    type: Literal["text_input", "text_area"]
-    """Streamlit component type."""
-    user_input: str = ""
-    """Value input by the user for the component."""
-
-
-@ComponentRegistry.register()
 class NumberInput(InputComponent):
     """Parameters for number input components."""
 
@@ -205,7 +189,7 @@ class Choice(InputComponent):
 class JsonOutput(OutputComponent):
     """Parameters for JSON output components."""
 
-    type: Literal["latex", "code", "json"]
+    type: Literal["json"]
     """Streamlit component type."""
     body: str | dict
     """Body for the component."""
