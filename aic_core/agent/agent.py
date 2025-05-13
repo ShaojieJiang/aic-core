@@ -155,20 +155,20 @@ class AgentFactory:
         model = OpenAIModel(model_name, provider=OpenAIProvider(api_key=api_key))
         return Agent(
             model=model,
-            result_type=result_type,
+            output_type=result_type,
             system_prompt=self.config.system_prompt,
             name=self.config.name,
             model_settings=ModelSettings(**self.config.model_settings)
             if self.config.model_settings
             else None,
             retries=self.config.retries,
-            result_tool_name=self.config.result_tool_name,
-            result_tool_description=self.config.result_tool_description,
-            result_retries=self.config.result_retries,
+            # result_tool_name=self.config.result_tool_name,
+            # result_tool_description=self.config.result_tool_description,
+            output_retries=self.config.result_retries,
             tools=self.get_tools(),
             mcp_servers=self.get_mcp_servers(),  # type: ignore[arg-type]
             defer_model_check=self.config.defer_model_check,
-            end_strategy=self.config.end_strategy,  # type: ignore[arg-type]
+            end_strategy=self.config.end_strategy,  # type: ignore
             instrument=self.config.instrument,
         )
 

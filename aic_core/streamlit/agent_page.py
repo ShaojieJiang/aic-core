@@ -45,7 +45,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
         self.page_state = page_state
         self.user_role = "user"
         self.assistant_role = "assistant"
-        self.agent = None
+        self.agent: Agent | None = None
 
     def reset_chat_history(self) -> None:
         """Reset chat history."""
@@ -64,6 +64,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
         history = self.page_state.chat_history
         if manual_answer:
             st.chat_message(self.user_role).write(user_input)
+        assert self.agent
         if self.agent._mcp_servers:
             async with self.agent.run_mcp_servers():
                 result = await self.agent.run(user_input, message_history=history)  # type: ignore
