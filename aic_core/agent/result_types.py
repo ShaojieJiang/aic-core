@@ -1,7 +1,6 @@
 """Streamlit MCP server with Pydantic models."""
 
 from __future__ import annotations
-import json
 from collections.abc import Callable
 from typing import Any, Literal
 import streamlit as st
@@ -69,21 +68,9 @@ class ComponentRegistry:
         cls,
         tool_call_part: ToolCallPart,
         tool_return_part: ToolReturnPart | None = None,
+        input_callback: Callable | None = None,
     ) -> Any:
         """Generate a component based on the parameters."""
-
-        def _input_callback(key: str) -> None:  # pragma: no cover
-            value = st.session_state[key]
-            updated_args = tool_call_part.args_as_dict()
-            updated_args.update({"user_input": value})
-            tool_call_part.args = (
-                updated_args
-                if isinstance(tool_call_part.args, dict)
-                else json.dumps(updated_args)
-            )
-            if tool_return_part:  # pragma: no cover
-                tool_return_part.content = f"User input: {value}"
-
         class_name = tool_call_part.tool_name.replace("final_result_", "")
         model = ComponentRegistry.get_component_class(class_name)
         params = model.model_validate(tool_call_part.args_as_dict())
@@ -93,28 +80,38 @@ class ComponentRegistry:
         kwargs = params.model_dump(exclude={"type"})
         value = kwargs.pop("user_input", None)
         key = kwargs.get("key", None)
+
+        def display_input_component(**comp_kwargs: dict) -> Any:
+            with st.form(key=key):
+                output = comp_func(**comp_kwargs)
+                if st.form_submit_button(
+                    "Submit",
+                    on_click=input_callback,
+                    args=(key, tool_call_part, tool_return_part),
+                ):  # pragma: no cover
+                    pass
+                return output
+
         match comp_type:
             case "text_input" | "text_area" | "number_input" | "slider":
-                output = comp_func(
-                    **kwargs, value=value, on_change=_input_callback, args=(key,)
+                output = display_input_component(
+                    **kwargs,
+                    value=value,
                 )
             case "radio":
                 try:
                     index = kwargs["options"].index(value)
                 except ValueError:  # pragma: no cover
                     index = None
-                output = comp_func(
-                    **kwargs, index=index, on_change=_input_callback, args=(key,)
+                output = display_input_component(
+                    **kwargs,
+                    index=index,
                 )
             case "multiselect":
-                output = comp_func(
+                output = display_input_component(
                     **kwargs,
                     default=value,
-                    on_change=_input_callback,
-                    args=(key,),
                 )
-            case "latex":
-                output = comp_func(kwargs["body"])
             case "json":
                 output = comp_func(kwargs["body"])
             case _:
@@ -149,16 +146,6 @@ class OutputComponent(StreamlitComponent):
 
 
 @ComponentRegistry.register()
-class TextInput(InputComponent):
-    """Parameters for text input components."""
-
-    type: Literal["text_input", "text_area"]
-    """Streamlit component type."""
-    user_input: str = ""
-    """Value input by the user for the component."""
-
-
-@ComponentRegistry.register()
 class NumberInput(InputComponent):
     """Parameters for number input components."""
 
@@ -187,22 +174,20 @@ class Choice(InputComponent):
 
 
 @ComponentRegistry.register()
-class TextOutput(OutputComponent):
-    """Parameters for text output components."""
+class JsonOutput(OutputComponent):
+    """Parameters for JSON output components."""
 
-    type: Literal["latex", "code", "json"]
+    type: Literal["json"]
     """Streamlit component type."""
     body: str | dict
     """Body for the component."""
-    language: str = "python"
-    """Language for the component."""
 
 
 @ComponentRegistry.register()
 class TableOutput(OutputComponent):
-    """Parameters for table output components."""
+    """Parameters for table output components. Be sure to generate a list of dictionaries as the `data` field."""  # noqa: E501
 
-    type: Literal["table", "dataframe"]
+    type: str = "dataframe"
     """Streamlit component type."""
-    data: dict
-    """Data dict for the component."""
+    data: list[dict]
+    """List of dictionaries for the component."""

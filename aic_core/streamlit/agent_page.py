@@ -1,8 +1,8 @@
 """Agent page."""
 
 import asyncio
+import json
 import streamlit as st
-from pydantic_ai import Agent
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequestPart,
@@ -12,7 +12,7 @@ from pydantic_ai.messages import (
     ToolReturnPart,
     UserPromptPart,
 )
-from aic_core.agent.agent import AgentConfig, AgentFactory
+from aic_core.agent.agent import AICAgent
 from aic_core.agent.result_types import ComponentRegistry
 from aic_core.streamlit.mixins import AgentSelectorMixin
 from aic_core.streamlit.page import AICPage
@@ -44,29 +44,42 @@ class AgentPage(AICPage, AgentSelectorMixin):
         self.page_state = page_state
         self.user_role = "user"
         self.assistant_role = "assistant"
+        self.agent: AICAgent | None = None
 
     def reset_chat_history(self) -> None:
         """Reset chat history."""
         self.page_state.chat_history = []
 
-    def get_agent(self, agent_name: str) -> Agent:
-        """Get agent."""
-        agent_config = AgentConfig.from_hub(self.repo_id, agent_name)
-        agent_factory = AgentFactory(agent_config)
-        agent = agent_factory.create_agent()
-
-        return agent
-
-    async def get_response(self, user_input: str, agent: Agent) -> None:
+    async def get_response(self, user_input: str, manual_answer: bool = True) -> None:
         """Get response from agent."""
         history = self.page_state.chat_history
-        st.chat_message(self.user_role).write(user_input)
-        if agent._mcp_servers:
-            async with agent.run_mcp_servers():
-                result = await agent.run(user_input, message_history=history)  # type: ignore
-        else:
-            result = await agent.run(user_input, message_history=history)  # type: ignore
-        self.page_state.chat_history.extend(result.new_messages())
+        if manual_answer:  # pragma: no cover
+            st.chat_message(self.user_role).write(user_input)
+        assert self.agent
+        new_messages = await self.agent.get_response(user_input, history)
+        self.page_state.chat_history.extend(new_messages)
+
+    def input_callback(
+        self, key: str, tool_call_part: ToolCallPart, tool_return_part: ToolReturnPart
+    ) -> None:
+        """Callback for input components."""
+        value = st.session_state[key]
+        updated_args = tool_call_part.args_as_dict()
+        updated_args.update({"user_input": value})
+        tool_call_part.args = (
+            updated_args
+            if isinstance(tool_call_part.args, dict)
+            else json.dumps(updated_args)
+        )
+        if tool_return_part:  # pragma: no cover
+            tool_return_part.content = f"User input: {value}"
+        asyncio.run(
+            self.get_response(
+                f"My answer to '{tool_call_part.args_as_dict().get('label')}' "
+                f"is: {value}",
+                manual_answer=False,
+            )
+        )
 
     def display_parts(
         self,
@@ -86,7 +99,9 @@ class AgentPage(AICPage, AgentSelectorMixin):
 
                     assert isinstance(next_msg_part, ToolReturnPart)
                     with st.chat_message(self.assistant_role):
-                        ComponentRegistry.generate_st_component(part, next_msg_part)
+                        ComponentRegistry.generate_st_component(
+                            part, next_msg_part, self.input_callback
+                        )
                 case _:  # pragma: no cover
                     pass
 
@@ -104,10 +119,10 @@ class AgentPage(AICPage, AgentSelectorMixin):
         self.display_chat_history()
 
         agent_name = self.agent_selector(self.repo_id)
-        agent = self.get_agent(agent_name)
+        self.agent = AICAgent(self.repo_id, agent_name)
         st.sidebar.button("Reset chat history", on_click=self.reset_chat_history)
         user_input = st.chat_input("Enter a message")
 
         if user_input:  # pragma: no cover
-            asyncio.run(self.get_response(user_input, agent))
+            asyncio.run(self.get_response(user_input))
             st.rerun()
