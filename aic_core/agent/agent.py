@@ -1,5 +1,6 @@
 """Agent module."""
 
+import os
 from typing import Any, Union
 import logfire
 from huggingface_hub.errors import LocalEntryNotFoundError
@@ -15,8 +16,9 @@ from aic_core.agent.agent_hub import AgentHub
 from aic_core.agent.result_types import ComponentRegistry
 
 
-logfire.configure()
-logfire.instrument_pydantic_ai()
+if os.environ.get("LOGFIRE_TOKEN", None):
+    logfire.configure()
+    logfire.instrument_pydantic_ai()
 
 
 class AgentConfig(BaseModel):
