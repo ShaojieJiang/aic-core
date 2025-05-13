@@ -112,8 +112,6 @@ class ComponentRegistry:
                     **kwargs,
                     default=value,
                 )
-            case "latex":  # pragma: no cover
-                output = comp_func(kwargs["body"])
             case "json":
                 output = comp_func(kwargs["body"])
             case _:

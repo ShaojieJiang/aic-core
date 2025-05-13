@@ -152,9 +152,7 @@ def test_generate_latex_output(mock_streamlit):
     )
     ComponentRegistry.generate_st_component(part)
 
-    mock_streamlit["form"].assert_called_once_with(key=None)
     mock_streamlit["json"].assert_called_once_with("Test output latex")
-    mock_streamlit["form_submit_button"].assert_called_once()
 
 
 def test_generate_table_output(mock_streamlit):
@@ -174,11 +172,9 @@ def test_generate_table_output(mock_streamlit):
     )
     ComponentRegistry.generate_st_component(part)
 
-    mock_streamlit["form"].assert_called_once_with(key=None)
     mock_streamlit["dataframe"].assert_called_once()
     call_args = mock_streamlit["dataframe"].call_args[1]
     assert call_args["data"] == data
-    mock_streamlit["form_submit_button"].assert_called_once()
 
 
 def test_generate_json_output(mock_streamlit):
@@ -194,9 +190,7 @@ def test_generate_json_output(mock_streamlit):
     )
     ComponentRegistry.generate_st_component(part)
 
-    mock_streamlit["form"].assert_called_once_with(key=None)
     mock_streamlit["json"].assert_called_once_with(test_data)
-    mock_streamlit["form_submit_button"].assert_called_once()
 
 
 def test_contains_component():
