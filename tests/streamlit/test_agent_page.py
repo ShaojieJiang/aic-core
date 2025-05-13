@@ -1,4 +1,5 @@
 import asyncio
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic_ai import Agent
@@ -183,3 +184,64 @@ def test_display_parts(agent_page):
                 part_kind="tool-call",
             )
             agent_page.display_parts([tool_call], None)
+
+
+def test_get_response_without_agent(agent_page):
+    """Test get_response without agent initialized."""
+    with pytest.raises(AssertionError):
+        asyncio.run(agent_page.get_response("test"))
+
+
+@patch("streamlit.title")
+@patch("streamlit.chat_input")
+@patch("streamlit.sidebar.button")
+def test_run_with_input(mock_button, mock_chat_input, mock_title, agent_page):
+    """Test run method with user input."""
+    mock_chat_input.return_value = "test input"
+    agent_page.agent_selector = MagicMock()
+    agent_page.get_agent = MagicMock()
+    agent_page.get_response = AsyncMock()
+
+    with patch.object(agent_page, "display_chat_history") as mock_display_chat_history:
+        with patch("streamlit.rerun") as mock_rerun:
+            agent_page.run()
+
+            mock_title.assert_called_once_with("Agent")
+            mock_button.assert_called_once_with(
+                "Reset chat history", on_click=agent_page.reset_chat_history
+            )
+            mock_chat_input.assert_called_once_with("Enter a message")
+            mock_display_chat_history.assert_called_once()
+            agent_page.get_response.assert_called_once_with("test input")
+            mock_rerun.assert_called_once()
+
+
+def test_input_callback(agent_page, mock_agent):
+    """Test input callback."""
+    agent_page.agent = mock_agent
+    agent_page.get_response = AsyncMock()
+
+    # Mock session state
+    with patch("streamlit.session_state", {"test_key": "test_value"}):
+        tool_call = ToolCallPart(
+            tool_name="test_tool",
+            args=json.dumps({"label": "Test Label"}),
+            tool_call_id="123",
+            part_kind="tool-call",
+        )
+        tool_return = ToolReturnPart(
+            tool_name="test_tool",
+            content="result",
+            tool_call_id="123",
+            part_kind="tool-return",
+        )
+
+        agent_page.input_callback("test_key", tool_call, tool_return)
+
+        # Verify the tool return content was updated
+        assert tool_return.content == "User input: test_value"
+        # Verify get_response was called with the correct message
+        agent_page.get_response.assert_called_once_with(
+            "My answer to 'Test Label' is: test_value",
+            manual_answer=False,
+        )
