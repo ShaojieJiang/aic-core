@@ -1,7 +1,6 @@
 """Streamlit MCP server with Pydantic models."""
 
 from __future__ import annotations
-import json
 from collections.abc import Callable
 from typing import Any, Literal
 import streamlit as st
@@ -72,19 +71,6 @@ class ComponentRegistry:
         input_callback: Callable | None = None,
     ) -> Any:
         """Generate a component based on the parameters."""
-
-        def input_callback(key: str) -> None:  # pragma: no cover
-            value = st.session_state[key]
-            updated_args = tool_call_part.args_as_dict()
-            updated_args.update({"user_input": value})
-            tool_call_part.args = (
-                updated_args
-                if isinstance(tool_call_part.args, dict)
-                else json.dumps(updated_args)
-            )
-            if tool_return_part:  # pragma: no cover
-                tool_return_part.content = f"User input: {value}"
-
         class_name = tool_call_part.tool_name.replace("final_result_", "")
         model = ComponentRegistry.get_component_class(class_name)
         params = model.model_validate(tool_call_part.args_as_dict())
