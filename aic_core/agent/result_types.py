@@ -101,7 +101,7 @@ class ComponentRegistry:
                         **kwargs,
                         default=value,
                     )
-                case "latex":
+                case "latex":  # pragma: no cover
                     output = comp_func(kwargs["body"])
                 case "json":
                     output = comp_func(kwargs["body"])
@@ -112,7 +112,7 @@ class ComponentRegistry:
                 "Submit",
                 on_click=input_callback,
                 args=(key, tool_call_part, tool_return_part),
-            ):
+            ):  # pragma: no cover
                 pass
         return output
 

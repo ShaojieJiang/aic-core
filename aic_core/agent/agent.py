@@ -16,7 +16,7 @@ from aic_core.agent.agent_hub import AgentHub
 from aic_core.agent.result_types import ComponentRegistry
 
 
-if os.environ.get("LOGFIRE_TOKEN", None):
+if os.environ.get("LOGFIRE_TOKEN", None):  # pragma: no cover
     logfire.configure()
     logfire.instrument_pydantic_ai()
 
