@@ -80,40 +80,44 @@ class ComponentRegistry:
         kwargs = params.model_dump(exclude={"type"})
         value = kwargs.pop("user_input", None)
         key = kwargs.get("key", None)
-        with st.form(key=key):
-            match comp_type:
-                case "text_input" | "text_area" | "number_input" | "slider":
-                    output = comp_func(
-                        **kwargs,
-                        value=value,
-                    )
-                case "radio":
-                    try:
-                        index = kwargs["options"].index(value)
-                    except ValueError:  # pragma: no cover
-                        index = None
-                    output = comp_func(
-                        **kwargs,
-                        index=index,
-                    )
-                case "multiselect":
-                    output = comp_func(
-                        **kwargs,
-                        default=value,
-                    )
-                case "latex":  # pragma: no cover
-                    output = comp_func(kwargs["body"])
-                case "json":
-                    output = comp_func(kwargs["body"])
-                case _:
-                    output = comp_func(**kwargs)
 
-            if st.form_submit_button(
-                "Submit",
-                on_click=input_callback,
-                args=(key, tool_call_part, tool_return_part),
-            ):  # pragma: no cover
-                pass
+        def display_input_component(**comp_kwargs: dict) -> Any:
+            with st.form(key=key):
+                output = comp_func(**comp_kwargs)
+                if st.form_submit_button(
+                    "Submit",
+                    on_click=input_callback,
+                    args=(key, tool_call_part, tool_return_part),
+                ):  # pragma: no cover
+                    pass
+                return output
+
+        match comp_type:
+            case "text_input" | "text_area" | "number_input" | "slider":
+                output = display_input_component(
+                    **kwargs,
+                    value=value,
+                )
+            case "radio":
+                try:
+                    index = kwargs["options"].index(value)
+                except ValueError:  # pragma: no cover
+                    index = None
+                output = display_input_component(
+                    **kwargs,
+                    index=index,
+                )
+            case "multiselect":
+                output = display_input_component(
+                    **kwargs,
+                    default=value,
+                )
+            case "latex":  # pragma: no cover
+                output = comp_func(kwargs["body"])
+            case "json":
+                output = comp_func(kwargs["body"])
+            case _:
+                output = comp_func(**kwargs)
         return output
 
 
@@ -183,7 +187,7 @@ class JsonOutput(OutputComponent):
 
 @ComponentRegistry.register()
 class TableOutput(OutputComponent):
-    """Parameters for table output components."""
+    """Parameters for table output components. Be sure to generate a list of dictionaries as the `data` field."""  # noqa: E501
 
     type: str = "dataframe"
     """Streamlit component type."""
