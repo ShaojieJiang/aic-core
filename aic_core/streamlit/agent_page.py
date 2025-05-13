@@ -45,6 +45,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
         self.page_state = page_state
         self.user_role = "user"
         self.assistant_role = "assistant"
+        self.agent = None
 
     def reset_chat_history(self) -> None:
         """Reset chat history."""
@@ -58,15 +59,16 @@ class AgentPage(AICPage, AgentSelectorMixin):
 
         return agent
 
-    async def get_response(self, user_input: str, agent: Agent) -> None:
+    async def get_response(self, user_input: str, manual_answer: bool = True) -> None:
         """Get response from agent."""
         history = self.page_state.chat_history
-        st.chat_message(self.user_role).write(user_input)
-        if agent._mcp_servers:
-            async with agent.run_mcp_servers():
-                result = await agent.run(user_input, message_history=history)  # type: ignore
+        if manual_answer:
+            st.chat_message(self.user_role).write(user_input)
+        if self.agent._mcp_servers:
+            async with self.agent.run_mcp_servers():
+                result = await self.agent.run(user_input, message_history=history)  # type: ignore
         else:
-            result = await agent.run(user_input, message_history=history)  # type: ignore
+            result = await self.agent.run(user_input, message_history=history)  # type: ignore
         self.page_state.chat_history.extend(result.new_messages())
 
     def input_callback(
@@ -83,7 +85,13 @@ class AgentPage(AICPage, AgentSelectorMixin):
         )
         if tool_return_part:
             tool_return_part.content = f"User input: {value}"
-        asyncio.run(self.get_response(""))
+        asyncio.run(
+            self.get_response(
+                f"My answer to '{tool_call_part.args_as_dict().get('label')}' "
+                f"is: {value}",
+                manual_answer=False,
+            )
+        )
 
     def display_parts(
         self,
@@ -123,10 +131,10 @@ class AgentPage(AICPage, AgentSelectorMixin):
         self.display_chat_history()
 
         agent_name = self.agent_selector(self.repo_id)
-        agent = self.get_agent(agent_name)
+        self.agent = self.get_agent(agent_name)
         st.sidebar.button("Reset chat history", on_click=self.reset_chat_history)
         user_input = st.chat_input("Enter a message")
 
         if user_input:  # pragma: no cover
-            asyncio.run(self.get_response(user_input, agent))
+            asyncio.run(self.get_response(user_input))
             st.rerun()

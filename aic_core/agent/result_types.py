@@ -94,38 +94,46 @@ class ComponentRegistry:
         kwargs = params.model_dump(exclude={"type"})
         value = kwargs.pop("user_input", None)
         key = kwargs.get("key", None)
-        match comp_type:
-            case "text_input" | "text_area" | "number_input" | "slider":
-                output = comp_func(
-                    **kwargs,
-                    value=value,
-                    on_change=input_callback,
-                    args=(key, tool_call_part, tool_return_part),
-                )
-            case "radio":
-                try:
-                    index = kwargs["options"].index(value)
-                except ValueError:  # pragma: no cover
-                    index = None
-                output = comp_func(
-                    **kwargs,
-                    index=index,
-                    on_change=input_callback,
-                    args=(key, tool_call_part, tool_return_part),
-                )
-            case "multiselect":
-                output = comp_func(
-                    **kwargs,
-                    default=value,
-                    on_change=input_callback,
-                    args=(key, tool_call_part, tool_return_part),
-                )
-            case "latex":
-                output = comp_func(kwargs["body"])
-            case "json":
-                output = comp_func(kwargs["body"])
-            case _:
-                output = comp_func(**kwargs)
+        with st.form(key=key):
+            match comp_type:
+                case "text_input" | "text_area" | "number_input" | "slider":
+                    output = comp_func(
+                        **kwargs,
+                        value=value,
+                        on_change=input_callback,
+                        args=(key, tool_call_part, tool_return_part),
+                    )
+                case "radio":
+                    try:
+                        index = kwargs["options"].index(value)
+                    except ValueError:  # pragma: no cover
+                        index = None
+                    output = comp_func(
+                        **kwargs,
+                        index=index,
+                        on_change=input_callback,
+                        args=(key, tool_call_part, tool_return_part),
+                    )
+                case "multiselect":
+                    output = comp_func(
+                        **kwargs,
+                        default=value,
+                        on_change=input_callback,
+                        args=(key, tool_call_part, tool_return_part),
+                    )
+                case "latex":
+                    output = comp_func(kwargs["body"])
+                case "json":
+                    output = comp_func(kwargs["body"])
+                case _:
+                    output = comp_func(**kwargs)
+
+            if st.form_submit_button(
+                "Submit",
+                on_click=input_callback,
+                args=(key, tool_call_part, tool_return_part),
+            ):
+                pass
         return output
 
 
