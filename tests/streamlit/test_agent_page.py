@@ -69,9 +69,10 @@ def test_get_response_without_mcp_servers(agent_page, mock_agent):
     mock_result = MagicMock()
     mock_result.new_messages.return_value = ["message1", "message2"]
     mock_agent.run = AsyncMock(return_value=mock_result)
+    agent_page.agent = mock_agent  # Set the agent before calling get_response
 
     with patch("streamlit.chat_message") as mock_chat_message:
-        asyncio.run(agent_page.get_response(user_input, mock_agent))
+        asyncio.run(agent_page.get_response(user_input))
 
         mock_chat_message.assert_called_once()
         assert agent_page.page_state.chat_history == ["message1", "message2"]
@@ -87,9 +88,10 @@ def test_get_response_with_mcp_servers(agent_page, mock_agent):
     mock_agent.run_mcp_servers.return_value.__aenter__ = AsyncMock()
     mock_agent.run_mcp_servers.return_value.__aexit__ = AsyncMock()
     agent_page.reset_chat_history()
+    agent_page.agent = mock_agent  # Set the agent before calling get_response
 
     with patch("streamlit.chat_message") as mock_chat_message:
-        asyncio.run(agent_page.get_response(user_input, mock_agent))
+        asyncio.run(agent_page.get_response(user_input))
 
         mock_chat_message.assert_called_once()
         assert agent_page.page_state.chat_history == ["message1"]
@@ -164,7 +166,9 @@ def test_display_parts(agent_page):
                     part_kind="tool-return",
                 )
                 agent_page.display_parts([tool_call], tool_return)
-                mock_generate.assert_called_once_with(tool_call, tool_return)
+                mock_generate.assert_called_once_with(
+                    tool_call, tool_return, agent_page.input_callback
+                )
 
     # Reset mock for next test
     mock_chat_message.reset_mock()
