@@ -333,3 +333,21 @@ def test_agent_factory_empty_mcp_server():
     assert len(servers) == 1
     assert servers[0].command == "command"
     assert servers[0].args == ["arg1", "arg2"]
+
+
+def test_get_mcp_servers_with_empty_server(agent_factory):
+    """Test get_mcp_servers with empty server string."""
+    agent_factory.config.mcp_servers = ["command1", "", "command2"]
+    servers = agent_factory.get_mcp_servers()
+    assert len(servers) == 2
+    assert servers[0] == MCPServerStdio("command1", [])
+    assert servers[1] == MCPServerStdio("command2", [])
+
+
+def test_get_mcp_servers_with_whitespace(agent_factory):
+    """Test get_mcp_servers with whitespace-only server string."""
+    agent_factory.config.mcp_servers = ["command1", "   ", "command2"]
+    servers = agent_factory.get_mcp_servers()
+    assert len(servers) == 2
+    assert servers[0] == MCPServerStdio("command1", [])
+    assert servers[1] == MCPServerStdio("command2", [])

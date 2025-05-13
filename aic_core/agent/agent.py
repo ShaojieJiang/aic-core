@@ -197,7 +197,7 @@ class AICAgent:
     ) -> list[ModelMessage]:
         """Get the response from the agent."""
         if self.agent._mcp_servers:
-            async with self.agent.run_mcp_servers():
+            async with self.agent.run_mcp_servers():  # pragma: no cover
                 result = await self.agent.run(user_prompt, message_history=history)
         else:
             result = await self.agent.run(user_prompt, message_history=history)

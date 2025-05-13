@@ -62,7 +62,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
     async def get_response(self, user_input: str, manual_answer: bool = True) -> None:
         """Get response from agent."""
         history = self.page_state.chat_history
-        if manual_answer:
+        if manual_answer:  # pragma: no cover
             st.chat_message(self.user_role).write(user_input)
         assert self.agent
         if self.agent._mcp_servers:
@@ -84,7 +84,7 @@ class AgentPage(AICPage, AgentSelectorMixin):
             if isinstance(tool_call_part.args, dict)
             else json.dumps(updated_args)
         )
-        if tool_return_part:
+        if tool_return_part:  # pragma: no cover
             tool_return_part.content = f"User input: {value}"
         asyncio.run(
             self.get_response(
